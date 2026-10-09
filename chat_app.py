@@ -1,15 +1,16 @@
 """
 Music Room — ห้องซ้อมดนตรีออนไลน์ & Live Jamming Studio (Flask Single File)
 - ธีมสีฟ้าสดใสโทนสว่าง (Bright Sky & Ocean Blue Light Theme)
+- ระบบบันทึกสตูดิโอ HD ใหม่:
+  1) 🎬 บันทึกวิดีโอรวมทั้งวง (Full Band Video HD 720p/1080p @ 30fps) ผสมภาพทุกคนบนเวที
+  2) 🎙️ บันทึกเสียงอย่างเดียวแบบ Hi-Fi Studio Master (Stereo 48kHz WAV / 320kbps) ไร้การสูญเสียคุณภาพ
+  3) ตัวเลือกเปิด/ปิดเสียง Metronome ในไฟล์บันทึก
+- ระบบเสียงสตูดิโอ: High-Pass Filter (ตัดเสียงฮัม 50/60Hz), Dynamics Compressor (กันเสียงแตกพร่า), In-Ear Monitor
+- เสียง Metronome สตูดิโอ Woodblock เสียงดัง ชัดเจน กังวาน ปรับระดับเสียงได้
+- เสียง Tuner กีตาร์/เบส นุ่มนวล
 - ซ้อมดนตรีสด & แจมเพลงออนไลน์แบบ Ultra-Low Latency (WebRTC Peer-to-Peer)
-- รองรับทั้งการต่อ "เครื่องดนตรีจริง" (กีตาร์ เบส คีย์บอร์ด กลองไฟฟ้า ผ่าน Audio Interface / iPhone / iPad)
-  และโหมดพูดคุยผ่านไมค์ พร้อมปิด DSP Echo Cancellation/Noise Filter ในโหมดดนตรี เพื่อเสียงที่ใส คมชัด ไม่โดนตัดทอน
-- ระบบเลือกอุปกรณ์ Audio Interface / Sound Card / ไมค์ / ลำโพง-หูฟัง โดยตรง
-- ระบบ Direct In-Ear Monitor (🎧 ฟังเสียงตัวเองในหูฟัง) ปรับ Gain ความดังได้ 0 - 300%
-- เปิดกล้องวิดีโอ (Webcam / มือถือ) และแชร์หน้าจอ / โน้ตเพลง / DAW
-- ระบบบันทึกวิดีโอและเสียงสด (Live Studio Recorder) พร้อมดาวน์โหลดไฟล์
-- เครื่องเคาะจังหวะ Metronome ซิงค์ห้อง + เครื่องเทียบเสียง Tuner
-- แชทสด ส่งคอร์ด แท็บเพลง แนบไฟล์เสียง/ภาพ
+- รองรับทั้งการต่อ "เครื่องดนตรีจริง" (Audio Interface / iPhone / iPad) และไมค์
+- เปิดกล้องวิดีโอ, แชร์หน้าจอ/โน้ตเพลง/DAW, แชทสด ส่งคอร์ด แท็บเพลง
 """
 
 import base64
@@ -280,16 +281,10 @@ BASE = r"""<!doctype html>
 
   @keyframes recBlink {
     0%, 100% { opacity: 1; }
-    50% { opacity: 0.25; }
+    50% { opacity: 0.2; }
   }
-  .rec-blink { animation: recBlink 1.2s infinite ease-in-out; }
+  .rec-blink { animation: recBlink 1.0s infinite ease-in-out; }
 
-  .glass-light {
-    background: rgba(255, 255, 255, 0.88);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    border: 1px solid rgba(186, 230, 253, 0.7);
-  }
   .glass-card {
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(12px);
@@ -377,7 +372,6 @@ async function copyQrUrl() {
 # ───────────────────────────── Login Page ─────────────────────────────
 LOGIN = r"""
 <div class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-sky-400 via-blue-500 to-cyan-600 relative overflow-hidden">
-  <!-- Glowing Sky Orbs -->
   <div class="absolute -top-32 -left-32 w-80 h-80 bg-white/20 rounded-full blur-2xl pointer-events-none"></div>
   <div class="absolute -bottom-32 -right-32 w-80 h-80 bg-cyan-300/25 rounded-full blur-2xl pointer-events-none"></div>
 
@@ -392,7 +386,7 @@ LOGIN = r"""
       <p class="text-sky-700 font-semibold text-sm mt-1">ห้องซ้อมดนตรีออนไลน์ & Live Jam Studio</p>
       <div class="flex items-center gap-2 mt-2.5 px-3 py-1 bg-sky-50 rounded-full border border-sky-200 text-xs text-sky-700 font-medium">
         <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-        <span>Ultra-Low Latency · Instrument / Mic Studio</span>
+        <span>Studio Audio Engine · HD Multi-Recorder</span>
       </div>
     </div>
 
@@ -455,7 +449,6 @@ LOGIN = r"""
 # ───────────────────────────── Lobby Page ─────────────────────────────
 LOBBY = r"""
 <div class="min-h-screen bg-gradient-to-b from-sky-100/70 via-blue-50/40 to-slate-100 text-slate-800">
-  <!-- Top Navbar -->
   <header class="bg-white/90 backdrop-blur-md border-b border-sky-100 sticky top-0 z-30 shadow-sm">
     <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3">
       <div class="flex items-center gap-3">
@@ -475,7 +468,6 @@ LOBBY = r"""
           <span class="hidden sm:inline">QR มือถือ / iPad</span>
         </button>
 
-        <!-- User Role Pill -->
         <div class="flex items-center gap-2 bg-white rounded-full pl-2 pr-3 py-1 border border-slate-200 shadow-sm">
           <span class="text-base">{{ my_role.split(' ')[0] if my_role else '🎵' }}</span>
           <div class="text-left">
@@ -492,17 +484,16 @@ LOBBY = r"""
   </header>
 
   <main class="max-w-6xl mx-auto px-4 py-6 sm:py-8 space-y-8">
-    <!-- Hero Banner -->
     <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-sky-600 via-blue-600 to-cyan-600 p-6 sm:p-8 text-white shadow-xl glow-sky">
       <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-semibold text-sky-100 mb-3">
             <span class="h-2 w-2 rounded-full bg-emerald-400 animate-ping"></span>
-            Real-time WebRTC Audio Engine พร้อมใช้งาน
+            Real-time Studio Audio Engine & HD Multi-Track Recorder
           </div>
           <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight font-display">สตูดิโอห้องซ้อมดนตรีออนไลน์ 🎸</h2>
           <p class="text-sky-100 text-sm mt-1 max-w-xl">
-            เสียบเครื่องดนตรีจริง (Audio Interface / iPhone / iPad) หรือใช้ไมค์ เล่นสดพร้อมกันแบบดีเลย์ต่ำสุด เปิดกล้อง และอัดเสียง/วิดีโอได้ทันที
+            เสียบเครื่องดนตรีจริง (Audio Interface / iPhone / iPad) หรือใช้ไมค์ เล่นสดพร้อมกันแบบดีเลย์ต่ำสุด อัดเสียง Master WAV หรือวิดีโอ HD ได้ทันที
           </p>
         </div>
 
@@ -707,7 +698,7 @@ PASSWORD_PROMPT = r"""
 """
 
 
-# ───────────────────────────── Main Studio Rehearsal Room (Bright Sky Blue) ─────────────────────────────
+# ───────────────────────────── Main Studio Rehearsal Room ─────────────────────────────
 ROOM = r"""
 <div class="min-h-screen bg-slate-100 text-slate-800 flex flex-col h-screen overflow-hidden" onclick="unlockAudioContext()">
   <!-- Top Control Bar / Studio Header -->
@@ -729,7 +720,7 @@ ROOM = r"""
           </div>
           <div class="text-[10px] text-slate-500 flex items-center gap-1.5">
             <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>สด P2P Mesh</span>
+            <span>Studio Clean Audio Engine</span>
             <span>•</span>
             <span id="memberCountText">1 สมาชิก</span>
           </div>
@@ -741,24 +732,25 @@ ROOM = r"""
     <div class="hidden md:flex items-center gap-3 bg-sky-50/80 px-4 py-1.5 rounded-2xl border border-sky-200">
       <!-- Metronome Control -->
       <div class="flex items-center gap-2">
-        <button id="metronomeBtn" onclick="toggleMetronome()" class="p-1.5 rounded-lg bg-white hover:bg-sky-100 text-slate-700 border border-slate-200 text-xs font-bold flex items-center gap-1.5 transition">
+        <button id="metronomeBtn" onclick="toggleMetronome()" class="px-2.5 py-1.5 rounded-xl bg-white hover:bg-sky-100 text-slate-700 border border-slate-200 text-xs font-bold flex items-center gap-1.5 transition shadow-sm">
           <span id="metronomeIcon">⏱️</span>
-          <span>BPM</span>
+          <span>เคาะจังหวะ</span>
         </button>
         <div class="flex items-center gap-1">
           <input type="number" id="bpmInput" value="{{ room.bpm or 120 }}" min="40" max="240" onchange="updateBpm(this.value)"
             class="w-14 bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-mono text-center font-bold text-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-300">
-          <div id="metroIndicator" class="h-3 w-3 rounded-full bg-slate-300 transition"></div>
+          <span class="text-[10px] text-slate-400 font-bold">BPM</span>
+          <div id="metroIndicator" class="h-3.5 w-3.5 rounded-full bg-slate-300 transition ml-1"></div>
         </div>
       </div>
 
       <div class="h-4 w-px bg-sky-200"></div>
 
-      <!-- Live Studio Recorder -->
+      <!-- Live Studio Recorder Button with Options Modal -->
       <div class="flex items-center gap-2">
-        <button id="recordBtn" onclick="toggleRecording()" class="px-3 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-xs font-bold flex items-center gap-1.5 transition">
+        <button id="recordBtn" onclick="openRecordModal()" class="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-xs font-bold flex items-center gap-1.5 transition shadow-sm">
           <span class="h-2 w-2 rounded-full bg-rose-500" id="recDot"></span>
-          <span id="recText">บันทึกวิดีโอ & เสียง</span>
+          <span id="recText">บันทึกสด (REC)</span>
         </button>
         <span id="recTimer" class="font-mono text-xs text-rose-600 hidden font-bold">00:00</span>
       </div>
@@ -766,20 +758,17 @@ ROOM = r"""
 
     <!-- Right: Audio Setup & Mode Selector -->
     <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
-      <!-- Audio Hardware Setup Button -->
-      <button onclick="openAudioSettingsModal()" class="px-2.5 py-1.5 rounded-xl bg-white hover:bg-sky-50 text-sky-800 border border-sky-200 text-xs font-bold flex items-center gap-1.5 transition shadow-sm" title="ตั้งค่า Sound Card / ไมค์ / ลำโพง / หูฟัง">
+      <button onclick="openAudioSettingsModal()" class="px-2.5 py-1.5 rounded-xl bg-white hover:bg-sky-50 text-sky-800 border border-sky-200 text-xs font-bold flex items-center gap-1.5 transition shadow-sm" title="ตั้งค่า Sound Card / ตัดเสียงรบกวน / Gain">
         <span>⚙️</span>
         <span class="hidden sm:inline">ตั้งค่า Sound Card</span>
       </button>
 
-      <!-- Direct In-Ear Monitor Toggle (Hear Myself) -->
       <button id="monitorBtn" onclick="toggleSelfMonitor()" class="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-sky-100 text-slate-700 border border-slate-200 text-xs font-bold flex items-center gap-1.5 transition shadow-sm" title="ฟังเสียงตัวเองในหูฟังสดๆ Direct Monitoring">
         <span id="monitorIcon">🎧</span>
         <span class="hidden lg:inline" id="monitorText">ฟังเสียงตัวเอง (OFF)</span>
       </button>
 
-      <!-- Instrument / Mic Audio Mode Switch -->
-      <button id="audioModeBtn" onclick="toggleAudioMode()" class="px-2.5 py-1.5 rounded-xl bg-sky-100 hover:bg-sky-200 text-sky-800 border border-sky-300 text-xs font-bold flex items-center gap-1.5 transition shadow-sm" title="คลิกเพื่อสลับระหว่างโหมดเครื่องดนตรีจริง (ปิด Echo Filter เสียงใสเต็มย่าน) หรือโหมดไมค์พูดคุย">
+      <button id="audioModeBtn" onclick="toggleAudioMode()" class="px-2.5 py-1.5 rounded-xl bg-sky-100 hover:bg-sky-200 text-sky-800 border border-sky-300 text-xs font-bold flex items-center gap-1.5 transition shadow-sm" title="สลับระหว่างโหมดเครื่องดนตรีจริง (Hi-Fi) หรือโหมดไมค์พูดคุย">
         <span id="audioModeIcon">🎸</span>
         <span class="hidden lg:inline" id="audioModeText">เครื่องดนตรีจริง (Hi-Fi)</span>
       </button>
@@ -796,48 +785,49 @@ ROOM = r"""
     </div>
   </header>
 
-  <!-- Autoplay Audio Unlock Banner if suspended -->
-  <div id="audioUnlockBanner" class="bg-gradient-to-r from-sky-600 to-blue-600 text-white px-4 py-2 text-xs font-bold flex items-center justify-between hidden shadow-md">
+  <!-- Autoplay Audio Unlock Banner -->
+  <div id="audioUnlockBanner" class="bg-gradient-to-r from-sky-600 to-blue-600 text-white px-4 py-2.5 text-xs font-bold flex items-center justify-between shadow-md">
     <div class="flex items-center gap-2">
-      <span>🔊</span>
-      <span>เบราว์เซอร์หยุดระบบเสียงอัตโนมัติ กรุณากดปุ่มเพื่อเปิดใช้งานเสียงเต็มรูปแบบ</span>
+      <span class="text-base animate-bounce">🔊</span>
+      <span>คลิกที่นี่เพื่อเปิดระบบเสียง (Audio Output & Metronome) ในเบราว์เซอร์</span>
     </div>
-    <button onclick="unlockAudioContext(true)" class="px-3 py-1 bg-white text-sky-700 rounded-lg font-bold hover:bg-sky-50 shadow-sm transition">
-      เปิดเสียงเดี๋ยวนี้
+    <button onclick="unlockAudioContext(true)" class="px-3.5 py-1 bg-white text-sky-700 rounded-xl font-bold hover:bg-sky-50 shadow-sm transition">
+      เปิดใช้งานเสียง
     </button>
   </div>
 
   <!-- Mobile Metronome & Record bar -->
   <div class="md:hidden flex items-center justify-between px-3 py-1.5 bg-sky-50 border-b border-sky-200 text-xs">
     <div class="flex items-center gap-2">
-      <button onclick="toggleMetronome()" class="px-2 py-1 rounded bg-white text-slate-700 border border-slate-200 flex items-center gap-1 font-bold">
-        <span>⏱️</span> <span id="mBpmVal">120</span>
+      <button onclick="toggleMetronome()" class="px-2.5 py-1 rounded-lg bg-white text-slate-700 border border-slate-200 flex items-center gap-1.5 font-bold shadow-sm">
+        <span>⏱️</span> <span id="mBpmVal">120 BPM</span>
       </button>
-      <div id="mMetroIndicator" class="h-2.5 w-2.5 rounded-full bg-slate-300"></div>
+      <div id="mMetroIndicator" class="h-3 w-3 rounded-full bg-slate-300"></div>
     </div>
     <div class="flex items-center gap-2">
-      <button onclick="toggleRecording()" class="px-2 py-1 rounded bg-rose-50 text-rose-600 border border-rose-200 flex items-center gap-1 font-bold">
+      <button onclick="openRecordModal()" class="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-600 border border-rose-200 flex items-center gap-1 font-bold">
         <span class="h-2 w-2 rounded-full bg-rose-500"></span>
-        <span id="mRecText">อัดสด</span>
+        <span id="mRecText">บันทึกสด</span>
       </button>
       <span id="mRecTimer" class="font-mono text-rose-600 hidden font-bold text-[11px]">00:00</span>
     </div>
   </div>
 
-  <!-- Main Studio Workspace (Video/Audio Stage + Side Chat/Tools) -->
+  <!-- Main Studio Workspace -->
   <div class="flex-1 flex overflow-hidden">
     <!-- Left Stage: Band Video & Audio Mesh Grid -->
     <div class="flex-1 flex flex-col min-w-0 bg-slate-100/80 relative overflow-y-auto p-3 sm:p-4 space-y-3">
+      <!-- Hidden Studio Video Canvas for Multi-Band HD Recording -->
+      <canvas id="recordCanvas" width="1280" height="720" class="hidden"></canvas>
+
       <!-- Stage Grid Container -->
       <div id="stageGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 flex-1 items-stretch auto-rows-fr min-h-[320px]">
         
         <!-- Local User Tile (My Stream) -->
         <div class="glass-card rounded-2xl p-3 border border-sky-200 relative flex flex-col justify-between overflow-hidden shadow-md group">
-          <!-- Video element or Avatar stage -->
           <div class="relative w-full flex-1 min-h-[160px] bg-gradient-to-br from-sky-900 to-slate-900 rounded-xl overflow-hidden flex items-center justify-center">
             <video id="localVideo" autoplay playsinline muted class="w-full h-full object-cover hidden"></video>
             
-            <!-- Default Instrument Avatar Display -->
             <div id="localAvatarBox" class="flex flex-col items-center justify-center p-4 text-center">
               <div class="h-20 w-20 rounded-2xl bg-gradient-to-tr from-sky-400 to-blue-600 p-0.5 mb-2 shadow-lg">
                 <div class="w-full h-full bg-white rounded-[14px] flex items-center justify-center text-3xl">
@@ -860,7 +850,6 @@ ROOM = r"""
             </div>
           </div>
 
-          <!-- My Tile Bottom Status -->
           <div class="mt-2 flex items-center justify-between text-xs pt-1 border-t border-slate-100">
             <div class="flex items-center gap-1.5 font-bold text-slate-800 text-xs truncate">
               <span>{{ me }}</span>
@@ -873,47 +862,40 @@ ROOM = r"""
           </div>
         </div>
 
-        <!-- Remote Peer Tiles will be dynamically injected here -->
+        <!-- Remote Peer Tiles injected here -->
       </div>
 
-      <!-- Studio Stage Bottom Audio & Video Hardware Controls -->
+      <!-- Studio Stage Bottom Controls -->
       <div class="bg-white/95 backdrop-blur-md rounded-2xl p-3 border border-sky-100 shadow-sm flex flex-wrap items-center justify-between gap-3 shrink-0">
-        <!-- Mic & Instrument Input Selection -->
         <div class="flex items-center gap-2 flex-wrap">
-          <!-- Mic / Instrument On/Off Toggle -->
-          <button id="toggleMicBtn" onclick="toggleAudioTrack()" class="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 transition shadow-sm">
+          <button id="toggleMicBtn" onclick="toggleAudioTrack()" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 transition shadow-sm">
             <span id="micBtnIcon">🎙️</span>
             <span id="micBtnText">ส่งเสียงสด (ON)</span>
           </button>
 
-          <!-- Camera On/Off Toggle -->
-          <button id="toggleCamBtn" onclick="toggleVideoTrack()" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 font-bold text-xs flex items-center gap-1.5 transition">
+          <button id="toggleCamBtn" onclick="toggleVideoTrack()" class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 font-bold text-xs flex items-center gap-1.5 transition">
             <span id="camBtnIcon">📷</span>
             <span id="camBtnText">เปิดกล้อง</span>
           </button>
 
-          <!-- Screen / Sheet Music Share -->
-          <button id="shareScreenBtn" onclick="toggleScreenShare()" class="px-3 py-2 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 font-bold text-xs flex items-center gap-1.5 transition">
+          <button id="shareScreenBtn" onclick="toggleScreenShare()" class="px-3.5 py-2 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 font-bold text-xs flex items-center gap-1.5 transition">
             <span>📑</span>
             <span id="shareScreenText">แชร์โน้ต/จอ</span>
           </button>
 
-          <!-- Audio Settings Modal Trigger -->
-          <button onclick="openAudioSettingsModal()" class="px-3 py-2 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 font-bold text-xs flex items-center gap-1.5 transition">
+          <button onclick="openAudioSettingsModal()" class="px-3.5 py-2 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 font-bold text-xs flex items-center gap-1.5 transition">
             <span>🎛️</span>
-            <span>อุปกรณ์เสียง & Gain</span>
+            <span>ตั้งค่า Sound Card & ไมค์</span>
           </button>
 
-          <!-- Instrument Tuner Quick Modal -->
-          <button onclick="toggleTunerModal()" class="px-3 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 font-bold text-xs flex items-center gap-1.5 transition">
+          <button onclick="toggleTunerModal()" class="px-3.5 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 font-bold text-xs flex items-center gap-1.5 transition">
             <span>🎯</span>
-            <span>เทียบเสียง Tuner</span>
+            <span>เครื่องเทียบเสียง Tuner</span>
           </button>
         </div>
 
-        <!-- Latency & Buffer Diagnostic Badge -->
         <div class="flex items-center gap-3 text-xs">
-          <div class="flex items-center gap-1.5 font-mono text-slate-600 bg-sky-50 px-2.5 py-1.5 rounded-lg border border-sky-200">
+          <div class="flex items-center gap-1.5 font-mono text-slate-600 bg-sky-50 px-3 py-1.5 rounded-xl border border-sky-200">
             <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
             <span>Latency: <strong class="text-sky-700" id="pingMs">~15-30ms</strong></span>
           </div>
@@ -921,9 +903,8 @@ ROOM = r"""
       </div>
     </div>
 
-    <!-- Right Sidebar: Tabs for Chat / Sheet Music / Band Members -->
+    <!-- Right Sidebar -->
     <div class="w-80 lg:w-96 bg-white border-l border-sky-100 flex flex-col shrink-0 hidden md:flex shadow-sm">
-      <!-- Sidebar Navigation Header -->
       <div class="p-2 border-b border-sky-100 flex items-center justify-between gap-1 bg-sky-50/50">
         <button onclick="switchSidebarTab('chat')" id="tabChatBtn" class="flex-1 py-1.5 rounded-lg text-xs font-bold transition bg-sky-600 text-white shadow-sm">
           💬 แชท & คอร์ด
@@ -938,16 +919,13 @@ ROOM = r"""
 
       <!-- Tab 1: Chat & Chords Tab -->
       <div id="tabChat" class="flex-1 flex flex-col min-h-0">
-        <!-- Messages Area -->
         <div id="messagesBox" class="flex-1 p-3 overflow-y-auto space-y-3 font-sans text-xs">
           <div class="p-3 rounded-xl bg-sky-50 border border-sky-100 text-sky-800 text-center">
             🎸 ยินดีต้อนรับสู่ห้องซ้อมดนตรีสด พิมพ์แชท ส่งคอร์ดเพลง หรือแชร์ไฟล์ที่นี่
           </div>
         </div>
 
-        <!-- Chat Input Form -->
         <div class="p-3 border-t border-sky-100 bg-sky-50/40 space-y-2">
-          <!-- Quick Chord Helper Bar -->
           <div class="flex items-center gap-1 overflow-x-auto pb-1 scroll-thin text-[11px]">
             <span class="text-slate-400 text-[10px] shrink-0">คอร์ดลัด:</span>
             <button onclick="insertChord('[C] ')" class="px-2 py-0.5 bg-white border border-sky-200 hover:bg-sky-100 text-sky-700 rounded font-mono font-bold">C</button>
@@ -982,47 +960,50 @@ ROOM = r"""
 
       <!-- Tab 3: Studio Tools Tab -->
       <div id="tabTools" class="flex-1 p-4 overflow-y-auto space-y-4 hidden text-xs">
-        <div class="glass-card rounded-2xl p-3 border border-sky-100 space-y-2 shadow-sm">
+        <div class="glass-card rounded-2xl p-3.5 border border-sky-100 space-y-2.5 shadow-sm">
+          <div class="flex items-center justify-between">
+            <h4 class="font-bold text-slate-800 flex items-center gap-1.5">
+              <span>⏱️</span> <span>เครื่องเคาะจังหวะ Metronome</span>
+            </h4>
+            <span class="font-mono text-sky-700 font-bold text-sm" id="toolBpmDisplay">120 BPM</span>
+          </div>
+          <input type="range" min="40" max="240" value="{{ room.bpm or 120 }}" oninput="updateBpm(this.value)" class="w-full accent-sky-600">
+          <div class="flex items-center justify-between text-[11px] text-slate-500">
+            <span>🔊 ระดับเสียงเคาะ:</span>
+            <input type="range" min="0.1" max="1" step="0.05" value="0.8" oninput="setMetroVolume(this.value)" class="w-28 accent-sky-600">
+          </div>
+          <div class="flex gap-2 pt-1">
+            <button onclick="toggleMetronome()" class="flex-1 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl transition text-xs shadow-sm">
+              เปิด / ปิด Metronome
+            </button>
+            <button onclick="tapTempo()" class="px-3.5 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-sky-700 font-bold rounded-xl transition text-xs">
+              Tap Tempo
+            </button>
+          </div>
+        </div>
+
+        <div class="glass-card rounded-2xl p-3.5 border border-sky-100 space-y-2 shadow-sm">
           <h4 class="font-bold text-slate-800 flex items-center gap-1.5">
             <span>🎧</span> <span>ฟังเสียงตัวเอง (Direct Monitoring)</span>
           </h4>
           <p class="text-[11px] text-slate-500 leading-relaxed">
-            เปิดเพื่อให้เสียงจากไมค์ / Audio Interface ดังเข้าหูฟังของคุณทันที (แนะนำให้ใส่หูฟัง)
+            ส่งสัญญาณเสียงจาก Sound Card ตรงเข้าหูฟังของคุณแบบ 0 ดีเลย์
           </p>
           <div class="flex items-center gap-2 pt-1">
-            <button onclick="toggleSelfMonitor()" id="toolMonitorBtn" class="px-3 py-1.5 bg-sky-600 text-white font-bold rounded-lg transition text-xs">
+            <button onclick="toggleSelfMonitor()" id="toolMonitorBtn" class="px-3 py-1.5 bg-sky-600 text-white font-bold rounded-xl transition text-xs">
               เปิดฟังเสียงตัวเอง
             </button>
             <input type="range" id="monitorVolRange" min="0" max="1.5" step="0.05" value="0.8" oninput="setMonitorVolume(this.value)" class="flex-1 accent-sky-600" title="ระดับเสียงหูฟัง">
           </div>
         </div>
 
-        <div class="glass-card rounded-2xl p-3 border border-sky-100 space-y-2 shadow-sm">
-          <h4 class="font-bold text-slate-800 flex items-center gap-1.5">
-            <span>⏱️</span> <span>เครื่องเคาะจังหวะ Metronome</span>
-          </h4>
-          <div class="flex items-center justify-between">
-            <span class="text-slate-500">Tempo:</span>
-            <span class="font-mono text-sky-700 font-bold text-sm" id="toolBpmDisplay">120 BPM</span>
-          </div>
-          <input type="range" min="40" max="240" value="{{ room.bpm or 120 }}" oninput="updateBpm(this.value)" class="w-full accent-sky-600">
-          <div class="flex gap-2">
-            <button onclick="toggleMetronome()" class="flex-1 py-1.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-lg transition text-xs shadow-sm">
-              เปิด / ปิด Metronome
-            </button>
-            <button onclick="tapTempo()" class="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-sky-700 font-bold rounded-lg transition text-xs">
-              Tap Tempo
-            </button>
-          </div>
-        </div>
-
-        <div class="glass-card rounded-2xl p-3 border border-sky-100 space-y-2 shadow-sm">
+        <div class="glass-card rounded-2xl p-3.5 border border-sky-100 space-y-2 shadow-sm">
           <h4 class="font-bold text-slate-800 flex items-center gap-1.5">
             <span>🔊</span> <span>ทดสอบเสียงลำโพง / หูฟัง</span>
           </h4>
-          <p class="text-[11px] text-slate-500">กดเพื่อทดสอบว่าหูฟังหรือลำโพงของคุณทำงานได้ยินเสียงหรือไม่</p>
+          <p class="text-[11px] text-slate-500">กดเพื่อทดสอบว่าหูฟังหรือลำโพงของคุณทำงานและได้ยินเสียงใสชัดเจน</p>
           <button onclick="playTestChime()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition shadow-sm">
-            🔔 เล่นเสียงทดสอบ (Test Sound Output)
+            🔔 เล่นเสียงทดสอบ (Studio Chime)
           </button>
         </div>
       </div>
@@ -1050,7 +1031,136 @@ ROOM = r"""
   </div>
 </div>
 
-<!-- Audio Hardware Settings Modal -->
+<!-- Studio Recording Options Modal -->
+<div id="recordModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
+  <div class="bg-white rounded-3xl p-6 sm:p-7 max-w-lg w-full border border-sky-100 text-left relative space-y-4 shadow-2xl">
+    <button onclick="closeRecordModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+    
+    <div class="flex items-center gap-3">
+      <div class="h-11 w-11 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center text-xl font-bold border border-rose-200">
+        🔴
+      </div>
+      <div>
+        <h3 class="text-lg font-bold text-slate-800 font-display">ระบบบันทึกสตูดิโอ (Studio Master Recorder)</h3>
+        <p class="text-xs text-slate-500">บันทึกเสียง Lossless Hi-Fi หรือวิดีโอรวมทั้งวง Full HD คมชัดสูงสุด</p>
+      </div>
+    </div>
+
+    <!-- Mode Selection: Audio-Only vs Full Band HD Video -->
+    <div class="space-y-2">
+      <label class="block text-xs font-bold text-slate-700">1. เลือกโหมดการบันทึก:</label>
+      <div class="grid grid-cols-2 gap-3">
+        <button type="button" onclick="selectRecordMode('audio')" id="recModeAudioBtn" class="p-3.5 rounded-2xl border-2 border-sky-500 bg-sky-50 text-left transition flex flex-col justify-between shadow-sm">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-2xl">🎙️</span>
+            <span class="px-2 py-0.5 rounded-full bg-sky-200/80 text-sky-800 text-[10px] font-bold">แนะนำ</span>
+          </div>
+          <div class="font-bold text-xs text-sky-900">บันทึกเสียงอย่างเดียว</div>
+          <div class="text-[10px] text-sky-700 mt-0.5 leading-snug">Hi-Fi Studio Master (ไฟล์ .wav / .webm ใสชัดไร้การสูญเสีย)</div>
+        </button>
+
+        <button type="button" onclick="selectRecordMode('video')" id="recModeVideoBtn" class="p-3.5 rounded-2xl border-2 border-slate-200 bg-slate-50 hover:bg-slate-100 text-left transition flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-2xl">🎬</span>
+            <span class="px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 text-[10px] font-bold">HD Video</span>
+          </div>
+          <div class="font-bold text-xs text-slate-800">บันทึกวิดีโอ + เสียง</div>
+          <div class="text-[10px] text-slate-500 mt-0.5 leading-snug">รวมภาพทุกคนบนเวที (1080p / 720p @ 30fps)</div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Quality & Format Options Sub-panel -->
+    <div id="audioFormatOptions" class="bg-sky-50/60 p-3.5 rounded-2xl border border-sky-100 space-y-2">
+      <label class="block text-xs font-bold text-sky-900">2. รูปแบบไฟล์เสียง (Audio Format):</label>
+      <div class="grid grid-cols-2 gap-2 text-xs">
+        <label class="flex items-center gap-2 p-2 bg-white rounded-xl border border-sky-200 cursor-pointer shadow-sm">
+          <input type="radio" name="audioFmt" value="wav" checked onchange="audioRecordFormat='wav'" class="text-sky-600 focus:ring-sky-500">
+          <div>
+            <div class="font-bold text-slate-800 text-xs">WAV Lossless (48kHz)</div>
+            <div class="text-[10px] text-slate-500">เสียงสดแท้ 100% สำหรับเปิดทุกเครื่อง/DAW</div>
+          </div>
+        </label>
+
+        <label class="flex items-center gap-2 p-2 bg-white rounded-xl border border-slate-200 cursor-pointer shadow-sm">
+          <input type="radio" name="audioFmt" value="webm" onchange="audioRecordFormat='webm'" class="text-sky-600 focus:ring-sky-500">
+          <div>
+            <div class="font-bold text-slate-800 text-xs">Opus 320kbps</div>
+            <div class="text-[10px] text-slate-500">ไฟล์ขนาดกะทัดรัด เสียงคมชัด</div>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <div id="videoFormatOptions" class="hidden bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-2">
+      <label class="block text-xs font-bold text-slate-700">2. ความละเอียดวิดีโอ (Video Resolution):</label>
+      <div class="grid grid-cols-2 gap-2 text-xs">
+        <label class="flex items-center gap-2 p-2 bg-white rounded-xl border border-sky-200 cursor-pointer shadow-sm">
+          <input type="radio" name="videoRes" value="1080p" checked onchange="videoRecordQuality='1080p'" class="text-sky-600 focus:ring-sky-500">
+          <div>
+            <div class="font-bold text-slate-800 text-xs">1080p Full HD</div>
+            <div class="text-[10px] text-slate-500">1920x1080 @ 6 Mbps (คมชัดสูงสุด)</div>
+          </div>
+        </label>
+
+        <label class="flex items-center gap-2 p-2 bg-white rounded-xl border border-slate-200 cursor-pointer shadow-sm">
+          <input type="radio" name="videoRes" value="720p" onchange="videoRecordQuality='720p'" class="text-sky-600 focus:ring-sky-500">
+          <div>
+            <div class="font-bold text-slate-800 text-xs">720p HD</div>
+            <div class="text-[10px] text-slate-500">1280x720 @ 3.5 Mbps (ประหยัดแรม)</div>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <!-- Mixing Controls & Metronome Inclusion -->
+    <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-2.5">
+      <div class="flex items-center justify-between text-xs">
+        <label class="flex items-center gap-2 cursor-pointer text-slate-700 font-medium">
+          <input type="checkbox" id="recIncludeMetro" class="rounded border-slate-300 text-sky-600 focus:ring-sky-500">
+          <span>รวมเสียงเคาะจังหวะ Metronome ในไฟล์</span>
+        </label>
+        <span class="text-[10px] text-slate-400 font-mono">Stereo 48kHz</span>
+      </div>
+
+      <!-- Live Master VU Meter & Limiter Indicator -->
+      <div class="space-y-1">
+        <div class="flex items-center justify-between text-[11px] text-slate-600">
+          <span>🔊 ระดับสัญญาณเสียงบันทึก (Master VU Level):</span>
+          <span class="text-[10px] text-emerald-600 font-bold" id="recLimiterStatus">🛡️ Anti-Clipping Limiter ON</span>
+        </div>
+        <div class="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden p-0.5 border border-slate-300">
+          <div id="recModalVuBar" class="bg-gradient-to-r from-emerald-400 via-amber-400 to-rose-500 h-full w-0 rounded-full transition-all duration-75"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Recording Status in Modal -->
+    <div id="modalRecStatus" class="hidden bg-rose-50 p-3.5 rounded-2xl border border-rose-200 text-center space-y-1 shadow-inner">
+      <div class="flex items-center justify-center gap-2 text-rose-600 font-bold text-sm">
+        <span class="h-3 w-3 rounded-full bg-rose-500 rec-blink"></span>
+        <span id="modalRecTypeTitle">กำลังบันทึกเสียงสด...</span>
+        <span id="modalRecTimer" class="font-mono text-base font-extrabold ml-1 bg-white px-2 py-0.5 rounded-lg border border-rose-200">00:00</span>
+      </div>
+      <p class="text-[10px] text-rose-500" id="modalRecSubtitle">ระบบกำลังมิกซ์เสียงและบันทึกข้อมูลอย่างต่อเนื่องด้วยคุณภาพสูงสุด</p>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="pt-2 flex gap-2">
+      <button id="startRecBtn" onclick="startStudioRecording()" class="w-full py-3 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-2xl shadow-lg shadow-rose-500/25 transition text-xs flex items-center justify-center gap-2">
+        <span class="text-sm">🔴</span>
+        <span>เริ่มการบันทึก (Start Recording)</span>
+      </button>
+
+      <button id="stopRecBtn" onclick="stopStudioRecording()" class="w-full py-3 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-2xl shadow-lg transition text-xs hidden items-center justify-center gap-2">
+        <span class="text-sm">⏹️</span>
+        <span>หยุดและดาวน์โหลดไฟล์ Master</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Audio Hardware & DSP Settings Modal -->
 <div id="audioSettingsModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
   <div class="bg-white rounded-3xl p-6 sm:p-7 max-w-md w-full border border-sky-100 text-left relative space-y-4 shadow-2xl">
     <button onclick="closeAudioSettingsModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
@@ -1060,12 +1170,11 @@ ROOM = r"""
         🎛️
       </div>
       <div>
-        <h3 class="text-lg font-bold text-slate-800 font-display">ตั้งค่าอุปกรณ์เสียง & Sound Card</h3>
-        <p class="text-xs text-slate-500">เลือกช่องสัญญาณเสียงเข้า-ออก และปรับความดัง</p>
+        <h3 class="text-lg font-bold text-slate-800 font-display">ตั้งค่า Sound Card & ระบบเสียง</h3>
+        <p class="text-xs text-slate-500">เลือกอุปกรณ์และปรับฟิลเตอร์ตัดสัญญาณรบกวน</p>
       </div>
     </div>
 
-    <!-- Input device select -->
     <div class="space-y-1.5">
       <label class="block text-xs font-bold text-slate-700">🎤 ช่องสัญญาณเสียงเข้า (Input / Sound Card):</label>
       <select id="audioInSelect" onchange="changeAudioInputDevice(this.value)" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-200">
@@ -1073,7 +1182,6 @@ ROOM = r"""
       </select>
     </div>
 
-    <!-- Output device select (if supported) -->
     <div class="space-y-1.5" id="audioOutBox">
       <label class="block text-xs font-bold text-slate-700">🔊 ช่องสัญญาณเสียงออก (Output / หูฟัง / ลำโพง):</label>
       <select id="audioOutSelect" onchange="changeAudioOutputDevice(this.value)" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-200">
@@ -1081,8 +1189,17 @@ ROOM = r"""
       </select>
     </div>
 
-    <!-- Input Gain Booster -->
-    <div class="bg-sky-50/60 p-3 rounded-2xl border border-sky-100 space-y-2">
+    <div class="bg-sky-50/70 p-3 rounded-2xl border border-sky-100 space-y-2">
+      <div class="flex items-center justify-between text-xs font-bold text-slate-800">
+        <span>🛡️ ฟิลเตอร์ตัดเสียงฮัม/เสียงจี่ (Anti-Hum 80Hz Filter):</span>
+        <span class="text-emerald-600 font-bold" id="humFilterBadge">เปิดอยู่ (Active)</span>
+      </div>
+      <p class="text-[11px] text-slate-500">
+        ตัดความถี่ต่ำกว่า 80Hz ที่มักเกิดจากสัญญาณไฟฟ้ารบกวน (50/60Hz Ground Hum) จากกีตาร์และซาวด์การ์ด
+      </p>
+    </div>
+
+    <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-2">
       <div class="flex items-center justify-between text-xs font-bold text-slate-700">
         <span>🎚️ เพิ่มความดังไมค์/เครื่องดนตรี (Input Gain):</span>
         <span class="text-sky-700 font-mono" id="gainDisplay">100%</span>
@@ -1096,11 +1213,10 @@ ROOM = r"""
       </div>
     </div>
 
-    <!-- Direct Monitoring Toggle -->
-    <div class="bg-purple-50/60 p-3 rounded-2xl border border-purple-100 flex items-center justify-between">
+    <div class="bg-purple-50/70 p-3 rounded-2xl border border-purple-100 flex items-center justify-between">
       <div>
         <div class="text-xs font-bold text-purple-900">🎧 ฟังเสียงตัวเอง (Direct Monitor)</div>
-        <div class="text-[10px] text-purple-600">ส่งเสียงไมค์/กีตาร์ตรงเข้าหูฟังสดๆ</div>
+        <div class="text-[10px] text-purple-600">ส่งเสียงไมค์/กีตาร์ตรงเข้าหูฟังสดๆ ไร้ดีเลย์</div>
       </div>
       <button onclick="toggleSelfMonitor()" id="modalMonitorBtn" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl text-xs transition">
         เปิดฟังเสียง
@@ -1108,10 +1224,10 @@ ROOM = r"""
     </div>
 
     <div class="pt-2 flex gap-2">
-      <button onclick="playTestChime()" class="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition">
+      <button onclick="playTestChime()" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition">
         🔔 ทดสอบเสียงออก
       </button>
-      <button onclick="closeAudioSettingsModal()" class="px-6 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl text-xs transition">
+      <button onclick="closeAudioSettingsModal()" class="px-6 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl text-xs transition">
         เสร็จสิ้น
       </button>
     </div>
@@ -1139,19 +1255,22 @@ ROOM = r"""
     <button onclick="toggleTunerModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">&times;</button>
     <div class="text-3xl">🎯</div>
     <h3 class="text-lg font-bold text-slate-800 font-display">Guitar / Bass Tuner Reference</h3>
-    <p class="text-xs text-slate-500">กดเพื่อฟังเสียงเทียบสายมาตรฐาน</p>
+    <p class="text-xs text-slate-500">กดเพื่อฟังเสียงเทียบสายมาตรฐาน (เสียงนุ่มนวล ชัดเจน)</p>
     
     <div class="grid grid-cols-3 gap-2 text-xs font-mono">
-      <button onclick="playNoteFrequency(82.41, 'E2 (สาย 6)')" class="p-2 bg-sky-50 rounded-xl border border-sky-200 hover:bg-sky-100 text-sky-800 font-bold">E2 (สาย 6)</button>
-      <button onclick="playNoteFrequency(110.00, 'A2 (สาย 5)')" class="p-2 bg-sky-50 rounded-xl border border-sky-200 hover:bg-sky-100 text-sky-800 font-bold">A2 (สาย 5)</button>
-      <button onclick="playNoteFrequency(146.83, 'D3 (สาย 4)')" class="p-2 bg-sky-50 rounded-xl border border-sky-200 hover:bg-sky-100 text-sky-800 font-bold">D3 (สาย 4)</button>
-      <button onclick="playNoteFrequency(196.00, 'G3 (สาย 3)')" class="p-2 bg-sky-50 rounded-xl border border-sky-200 hover:bg-sky-100 text-sky-800 font-bold">G3 (สาย 3)</button>
-      <button onclick="playNoteFrequency(246.94, 'B3 (สาย 2)')" class="p-2 bg-sky-50 rounded-xl border border-sky-200 hover:bg-sky-100 text-sky-800 font-bold">B3 (สาย 2)</button>
-      <button onclick="playNoteFrequency(329.63, 'E4 (สาย 1)')" class="p-2 bg-sky-50 rounded-xl border border-sky-200 hover:bg-sky-100 text-sky-800 font-bold">E4 (สาย 1)</button>
+      <button onclick="playMusicalTunerTone(82.41, 'E2 (สาย 6)')" class="p-2.5 bg-sky-50 rounded-xl border border-sky-200 hover:bg-sky-100 text-sky-800 font-bold">E2 (สาย 6)</button>
+      <button onclick="playMusicalTunerTone(110.00, 'A2 (สาย 5)')" class="p-2.5 bg-sky-50 rounded-xl border border-sky-200 hover:bg-sky-100 text-sky-800 font-bold">A2 (สาย 5)</button>
+      <button onclick="playMusicalTunerTone(146.83, 'D3 (สาย 4)')" class="p-2.5 bg-sky-50 rounded-xl border border-sky-200 hover:bg-sky-100 text-sky-800 font-bold">D3 (สาย 4)</button>
+      <button onclick="playMusicalTunerTone(196.00, 'G3 (สาย 3)')" class="p-2.5 bg-sky-50 rounded-xl border border-sky-200 hover:bg-sky-100 text-sky-800 font-bold">G3 (สาย 3)</button>
+      <button onclick="playMusicalTunerTone(246.94, 'B3 (สาย 2)')" class="p-2.5 bg-sky-50 rounded-xl border border-sky-200 hover:bg-sky-100 text-sky-800 font-bold">B3 (สาย 2)</button>
+      <button onclick="playMusicalTunerTone(329.63, 'E4 (สาย 1)')" class="p-2.5 bg-sky-50 rounded-xl border border-sky-200 hover:bg-sky-100 text-sky-800 font-bold">E4 (สาย 1)</button>
     </div>
 
-    <div class="pt-2">
-      <button onclick="stopAllTunerTones()" class="w-full py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold rounded-xl border border-rose-200">
+    <div class="pt-2 flex gap-2">
+      <button onclick="playMusicalTunerTone(440, 'A440 (มาตรฐาน)')" class="flex-1 py-2 bg-sky-100 hover:bg-sky-200 text-sky-800 text-xs font-bold rounded-xl border border-sky-200">
+        A440 มาตรฐาน
+      </button>
+      <button onclick="stopAllTunerTones()" class="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold rounded-xl border border-rose-200">
         หยุดเสียง
       </button>
     </div>
@@ -1160,7 +1279,7 @@ ROOM = r"""
 
 <script>
 /* =========================================================================
-   Music Room Core Studio Client (WebRTC P2P Mesh + Web Audio DSP Engine)
+   Music Room Upgraded Audio DSP Engine & HD Multi-Track Studio Recorder
    ========================================================================= */
 const ROOM_CODE = "{{ room.code }}";
 const MY_NAME = "{{ me }}";
@@ -1176,14 +1295,17 @@ let isVideoEnabled = false;
 let isInstrumentMode = true;
 let isScreenSharing = false;
 
-// Audio Device & Gain Nodes
+// Audio Device & Gain / Filter Nodes
 let selectedAudioInputId = '';
 let selectedAudioOutputId = '';
 let inputGainNode = null;
+let highpassFilterNode = null;
+let compressorNode = null;
 let monitorGainNode = null;
 let isSelfMonitoring = false;
 let monitorVolume = 0.8;
 let inputGainValue = 1.0;
+let metroVolume = 0.8;
 
 // WebRTC Peer Connections Map: { [peerName]: RTCPeerConnection }
 const peerConnections = {};
@@ -1199,17 +1321,30 @@ let localVuInterval = null;
 
 // Metronome & Tuner
 let metronomePlaying = false;
-let metronomeInterval = null;
+let metronomeTimer = null;
+let nextNoteTime = 0.0;
 let currentBpm = {{ room.bpm or 120 }};
-let tunerOscillator = null;
+let currentBeat = 0;
+let tunerActiveNodes = [];
 
-// Recorder
+// Studio Recorder Variables (Hi-Fi Master & HD Video)
 let mediaRecorder = null;
 let recordedChunks = [];
 let recordStartTime = 0;
 let recordTimerInterval = null;
+let currentRecordMode = 'audio'; // 'audio' or 'video'
+let audioRecordFormat = 'wav';   // 'wav' (Lossless 48kHz Stereo) or 'webm' (Opus 320kbps)
+let videoRecordQuality = '1080p'; // '1080p' (Full HD 6Mbps) or '720p' (HD 3.5Mbps)
+let canvasDrawInterval = null;
+let recordingDestNode = null;
+let recLimiterNode = null;
+let recAnalyserNode = null;
+let recVuInterval = null;
+let pcmRecorderNode = null;
+let pcmChunksL = [];
+let pcmChunksR = [];
+let isRecordingActive = false;
 
-// STUN Configuration for WebRTC P2P
 const rtcConfig = {
   iceServers: [
     { urls: "stun:stun.l.google.com:19302" },
@@ -1219,13 +1354,23 @@ const rtcConfig = {
 };
 
 // ──────────────── Audio Context Unlock ────────────────
+function getOrCreateAudioContext() {
+  if (!audioCtx) {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    audioCtx = new AudioContextClass({ latencyHint: 'interactive', sampleRate: 48000 });
+  }
+  return audioCtx;
+}
+
 function unlockAudioContext(fromButton=false) {
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if (audioCtx.state === 'suspended') {
-    audioCtx.resume().then(() => {
+  const ctx = getOrCreateAudioContext();
+  if (ctx.state === 'suspended') {
+    ctx.resume().then(() => {
       document.getElementById('audioUnlockBanner')?.classList.add('hidden');
       if (fromButton) showToast("ระบบเสียงพร้อมทำงานแล้ว 🔊", "ok");
     });
+  } else {
+    document.getElementById('audioUnlockBanner')?.classList.add('hidden');
   }
 }
 
@@ -1253,7 +1398,7 @@ async function initStudioMedia() {
 
     audioTrack = localStream.getAudioTracks()[0];
     if (audioTrack) {
-      setupLocalAudioChain(localStream);
+      setupStudioAudioChain(localStream);
     }
 
     enumerateAudioHardware();
@@ -1269,39 +1414,52 @@ async function initStudioMedia() {
   }
 }
 
-function setupLocalAudioChain(stream) {
+function setupStudioAudioChain(stream) {
   try {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const ctx = getOrCreateAudioContext();
+    if (ctx.state === 'suspended') ctx.resume();
     
     if (localSource) {
       try { localSource.disconnect(); } catch(e) {}
     }
 
-    localSource = audioCtx.createMediaStreamSource(stream);
+    localSource = ctx.createMediaStreamSource(stream);
     
-    // Gain Booster Node
+    if (!highpassFilterNode) {
+      highpassFilterNode = ctx.createBiquadFilter();
+      highpassFilterNode.type = 'highpass';
+      highpassFilterNode.frequency.value = 80;
+      highpassFilterNode.Q.value = 0.7;
+    }
+
+    if (!compressorNode) {
+      compressorNode = ctx.createDynamicsCompressor();
+      compressorNode.threshold.setValueAtTime(-22, ctx.currentTime);
+      compressorNode.knee.setValueAtTime(25, ctx.currentTime);
+      compressorNode.ratio.setValueAtTime(4, ctx.currentTime);
+      compressorNode.attack.setValueAtTime(0.003, ctx.currentTime);
+      compressorNode.release.setValueAtTime(0.2, ctx.currentTime);
+    }
+
     if (!inputGainNode) {
-      inputGainNode = audioCtx.createGain();
+      inputGainNode = ctx.createGain();
       inputGainNode.gain.value = inputGainValue;
     }
 
-    // Direct Monitor Gain Node (for hearing yourself)
     if (!monitorGainNode) {
-      monitorGainNode = audioCtx.createGain();
+      monitorGainNode = ctx.createGain();
       monitorGainNode.gain.value = isSelfMonitoring ? monitorVolume : 0;
     }
 
-    localAnalyser = audioCtx.createAnalyser();
+    localAnalyser = ctx.createAnalyser();
     localAnalyser.fftSize = 64;
 
-    // Connect chain:
-    // localSource -> inputGainNode -> localAnalyser
-    // inputGainNode -> monitorGainNode -> audioCtx.destination (hear myself)
-    localSource.connect(inputGainNode);
+    localSource.connect(highpassFilterNode);
+    highpassFilterNode.connect(compressorNode);
+    compressorNode.connect(inputGainNode);
     inputGainNode.connect(localAnalyser);
     inputGainNode.connect(monitorGainNode);
-    monitorGainNode.connect(audioCtx.destination);
+    monitorGainNode.connect(ctx.destination);
 
     const dataArray = new Uint8Array(localAnalyser.frequencyBinCount);
     const vuBar = document.getElementById('localVuBar');
@@ -1324,9 +1482,9 @@ function setupLocalAudioChain(stream) {
   }
 }
 
-// ──────────────── Direct In-Ear Monitor (Hear Yourself) ────────────────
+// ──────────────── Direct In-Ear Monitor ────────────────
 function toggleSelfMonitor() {
-  unlockAudioContext();
+  unlockAudioContext(true);
   isSelfMonitoring = !isSelfMonitoring;
   
   if (monitorGainNode) {
@@ -1341,13 +1499,13 @@ function toggleSelfMonitor() {
   if (isSelfMonitoring) {
     if (btn) btn.className = 'px-2.5 py-1.5 rounded-xl bg-purple-600 text-white border border-purple-400 text-xs font-bold flex items-center gap-1.5 transition shadow-sm';
     if (text) text.textContent = 'ฟังเสียงตัวเอง (ON)';
-    if (toolBtn) { toolBtn.textContent = 'ปิดฟังเสียงตัวเอง'; toolBtn.className = 'px-3 py-1.5 bg-rose-600 text-white font-bold rounded-lg transition text-xs'; }
+    if (toolBtn) { toolBtn.textContent = 'ปิดฟังเสียงตัวเอง'; toolBtn.className = 'px-3 py-1.5 bg-rose-600 text-white font-bold rounded-xl transition text-xs'; }
     if (modalBtn) { modalBtn.textContent = 'ปิดฟังเสียง'; modalBtn.className = 'px-3 py-1.5 bg-rose-600 text-white font-bold rounded-xl text-xs transition'; }
     showToast("เปิดระบบฟังเสียงตัวเองในหูฟังแล้ว 🎧 (Direct Monitoring)", "ok");
   } else {
     if (btn) btn.className = 'px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-sky-100 text-slate-700 border border-slate-200 text-xs font-bold flex items-center gap-1.5 transition shadow-sm';
     if (text) text.textContent = 'ฟังเสียงตัวเอง (OFF)';
-    if (toolBtn) { toolBtn.textContent = 'เปิดฟังเสียงตัวเอง'; toolBtn.className = 'px-3 py-1.5 bg-sky-600 text-white font-bold rounded-lg transition text-xs'; }
+    if (toolBtn) { toolBtn.textContent = 'เปิดฟังเสียงตัวเอง'; toolBtn.className = 'px-3 py-1.5 bg-sky-600 text-white font-bold rounded-xl transition text-xs'; }
     if (modalBtn) { modalBtn.textContent = 'เปิดฟังเสียง'; modalBtn.className = 'px-3 py-1.5 bg-purple-600 text-white font-bold rounded-xl text-xs transition'; }
     showToast("ปิดระบบฟังเสียงตัวเอง", "ok");
   }
@@ -1367,6 +1525,10 @@ function setInputGain(val) {
   }
   const pct = Math.round(inputGainValue * 100) + '%';
   document.getElementById('gainDisplay').textContent = pct;
+}
+
+function setMetroVolume(val) {
+  metroVolume = parseFloat(val);
 }
 
 // ──────────────── Enumerate & Change Audio Hardware ────────────────
@@ -1452,7 +1614,7 @@ async function refreshAudioTrack() {
     audioTrack = newTrack;
     localStream.removeTrack(localStream.getAudioTracks()[0]);
     localStream.addTrack(newTrack);
-    setupLocalAudioChain(localStream);
+    setupStudioAudioChain(localStream);
     showToast("เชื่อมต่ออุปกรณ์เสียงสำเร็จ 🎸", "ok");
   } catch(err) {
     console.error("Refresh audio failed:", err);
@@ -1473,29 +1635,668 @@ function closeAudioSettingsModal() {
   modal.classList.remove('flex');
 }
 
+// ──────────────── Studio Metronome ────────────────
+function toggleMetronome() {
+  unlockAudioContext(true);
+  metronomePlaying = !metronomePlaying;
+  const btn = document.getElementById('metronomeBtn');
+  const dot = document.getElementById('metroIndicator');
+  const mDot = document.getElementById('mMetroIndicator');
+
+  if (metronomePlaying) {
+    if (btn) btn.classList.add('bg-sky-600', 'text-white');
+    currentBeat = 0;
+    const ctx = getOrCreateAudioContext();
+    nextNoteTime = ctx.currentTime + 0.05;
+    scheduler();
+    showToast(`เริ่มเคาะจังหวะ ${currentBpm} BPM ⏱️`, "ok");
+  } else {
+    if (btn) btn.classList.remove('bg-sky-600', 'text-white');
+    if (metronomeTimer) clearTimeout(metronomeTimer);
+    if (dot) dot.className = 'h-3.5 w-3.5 rounded-full bg-slate-300';
+    if (mDot) mDot.className = 'h-3 w-3 rounded-full bg-slate-300';
+  }
+}
+
+function scheduler() {
+  if (!metronomePlaying) return;
+  const ctx = getOrCreateAudioContext();
+  while (nextNoteTime < ctx.currentTime + 0.1) {
+    scheduleWoodblockClick(currentBeat, nextNoteTime);
+    nextNote();
+  }
+  metronomeTimer = setTimeout(scheduler, 25);
+}
+
+function nextNote() {
+  const secondsPerBeat = 60.0 / currentBpm;
+  nextNoteTime += secondsPerBeat;
+  currentBeat = (currentBeat + 1) % 4;
+}
+
+function scheduleWoodblockClick(beatNumber, time) {
+  const ctx = getOrCreateAudioContext();
+  const isAccent = (beatNumber === 0);
+
+  const osc1 = ctx.createOscillator();
+  const osc2 = ctx.createOscillator();
+  const gain = ctx.createGain();
+  const filter = ctx.createBiquadFilter();
+
+  osc1.type = 'sine';
+  osc2.type = 'triangle';
+
+  const baseFreq = isAccent ? 1600 : 950;
+  osc1.frequency.setValueAtTime(baseFreq, time);
+  osc1.frequency.exponentialRampToValueAtTime(baseFreq * 0.4, time + 0.07);
+
+  osc2.frequency.setValueAtTime(baseFreq * 0.5, time);
+  osc2.frequency.exponentialRampToValueAtTime(baseFreq * 0.2, time + 0.07);
+
+  filter.type = 'bandpass';
+  filter.frequency.setValueAtTime(baseFreq, time);
+  filter.Q.setValueAtTime(2.0, time);
+
+  const clickVolume = (isAccent ? 0.9 : 0.6) * metroVolume;
+  gain.gain.setValueAtTime(0.001, time);
+  gain.gain.linearRampToValueAtTime(clickVolume, time + 0.003);
+  gain.gain.exponentialRampToValueAtTime(0.001, time + 0.07);
+
+  osc1.connect(filter);
+  osc2.connect(filter);
+  filter.connect(gain);
+  gain.connect(ctx.destination);
+
+  // If recorder includes metronome, also route to recorder destination
+  if (recordingDestNode && document.getElementById('recIncludeMetro')?.checked) {
+    gain.connect(recordingDestNode);
+  }
+
+  osc1.start(time);
+  osc2.start(time);
+  osc1.stop(time + 0.08);
+  osc2.stop(time + 0.08);
+
+  setTimeout(() => {
+    if (!metronomePlaying) return;
+    const dot = document.getElementById('metroIndicator');
+    const mDot = document.getElementById('mMetroIndicator');
+    if (dot) {
+      dot.className = `h-3.5 w-3.5 rounded-full ${isAccent ? 'bg-sky-500 shadow-md shadow-sky-500/80 scale-125' : 'bg-blue-400 scale-100'} transition duration-75`;
+    }
+    if (mDot) {
+      mDot.className = `h-3 w-3 rounded-full ${isAccent ? 'bg-sky-500' : 'bg-blue-400'}`;
+    }
+  }, Math.max(0, (time - ctx.currentTime) * 1000));
+}
+
+function updateBpm(bpm) {
+  currentBpm = parseInt(bpm) || 120;
+  document.getElementById('bpmInput').value = currentBpm;
+  document.getElementById('mBpmVal').textContent = currentBpm + ' BPM';
+  document.getElementById('toolBpmDisplay').textContent = currentBpm + ' BPM';
+}
+
+let tapTimes = [];
+function tapTempo() {
+  const now = Date.now();
+  tapTimes.push(now);
+  if (tapTimes.length > 4) tapTimes.shift();
+
+  if (tapTimes.length >= 2) {
+    let diffs = [];
+    for (let i = 1; i < tapTimes.length; i++) diffs.push(tapTimes[i] - tapTimes[i-1]);
+    let avg = diffs.reduce((a, b) => a + b) / diffs.length;
+    let bpm = Math.round(60000 / avg);
+    if (bpm >= 40 && bpm <= 240) {
+      updateBpm(bpm);
+    }
+  }
+}
+
+// ──────────────── Tuner Reference Notes ────────────────
+function playMusicalTunerTone(freq, name) {
+  stopAllTunerTones();
+  unlockAudioContext(true);
+  const ctx = getOrCreateAudioContext();
+  
+  try {
+    const osc = ctx.createOscillator();
+    const subOsc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const filter = ctx.createBiquadFilter();
+
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(freq, ctx.currentTime);
+
+    subOsc.type = 'sine';
+    subOsc.frequency.setValueAtTime(freq * 0.5, ctx.currentTime);
+
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(freq * 3.5, ctx.currentTime);
+
+    gain.gain.setValueAtTime(0.001, ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.35, ctx.currentTime + 0.1);
+
+    osc.connect(filter);
+    subOsc.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start();
+    subOsc.start();
+
+    tunerActiveNodes = [osc, subOsc, gain];
+    showToast(`เล่นเสียงเทียบสาย ${name} (${freq} Hz) 🎵`, "ok");
+  } catch(e) {}
+}
+
+function stopAllTunerTones() {
+  if (tunerActiveNodes.length > 0) {
+    const ctx = getOrCreateAudioContext();
+    const [osc, subOsc, gain] = tunerActiveNodes;
+    try {
+      gain.gain.linearRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+      setTimeout(() => {
+        try { osc.stop(); subOsc.stop(); } catch(e) {}
+      }, 60);
+    } catch(e) {}
+    tunerActiveNodes = [];
+  }
+}
+
 // ──────────────── Test Audio Output Chime ────────────────
 function playTestChime() {
   unlockAudioContext(true);
+  const ctx = getOrCreateAudioContext();
   try {
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
-    osc.frequency.exponentialRampToValueAtTime(659.25, audioCtx.currentTime + 0.15); // E5
-    osc.frequency.exponentialRampToValueAtTime(783.99, audioCtx.currentTime + 0.3); // G5
+    const chord = [523.25, 659.25, 783.99];
+    chord.forEach((freq, idx) => {
+      const startTime = ctx.currentTime + (idx * 0.12);
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, startTime);
+      
+      gain.gain.setValueAtTime(0.001, startTime);
+      gain.gain.linearRampToValueAtTime(0.25, startTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.7);
 
-    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.6);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
 
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.6);
+      osc.start(startTime);
+      osc.stop(startTime + 0.75);
+    });
     showToast("กำลังเล่นเสียงทดสอบลำโพง/หูฟัง 🔔", "ok");
   } catch(e) {}
 }
 
-// ──────────────── Toggle Instrument vs Voice DSP Mode ────────────────
+// ──────────────── HD Studio Multi-Track Recorder (Lossless WAV & Full HD Video) ────────────────
+function encodeWAV(samplesL, samplesR, sampleRate = 48000) {
+  const numChannels = (samplesR && samplesR.length > 0) ? 2 : 1;
+  const numSamples = samplesL.length;
+  const buffer = new ArrayBuffer(44 + numSamples * numChannels * 2);
+  const view = new DataView(buffer);
+
+  function writeString(offset, string) {
+    for (let i = 0; i < string.length; i++) {
+      view.setUint8(offset + i, string.charCodeAt(i));
+    }
+  }
+
+  // RIFF header
+  writeString(0, 'RIFF');
+  view.setUint32(4, 36 + numSamples * numChannels * 2, true);
+  writeString(8, 'WAVE');
+  
+  // Format chunk
+  writeString(12, 'fmt ');
+  view.setUint32(16, 16, true); // Subchunk1Size (16 for PCM)
+  view.setUint16(20, 1, true);  // AudioFormat (1 = PCM)
+  view.setUint16(22, numChannels, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * numChannels * 2, true); // ByteRate
+  view.setUint16(32, numChannels * 2, true); // BlockAlign
+  view.setUint16(34, 16, true); // BitsPerSample (16-bit)
+
+  // Data chunk
+  writeString(36, 'data');
+  view.setUint32(40, numSamples * numChannels * 2, true);
+
+  // Write 16-bit PCM samples interleaved
+  let offset = 44;
+  for (let i = 0; i < numSamples; i++) {
+    let sL = Math.max(-1, Math.min(1, samplesL[i]));
+    view.setInt16(offset, sL < 0 ? sL * 0x8000 : sL * 0x7FFF, true);
+    offset += 2;
+
+    if (numChannels === 2) {
+      let sR = Math.max(-1, Math.min(1, samplesR[i]));
+      view.setInt16(offset, sR < 0 ? sR * 0x8000 : sR * 0x7FFF, true);
+      offset += 2;
+    }
+  }
+
+  return new Blob([view], { type: 'audio/wav' });
+}
+
+function openRecordModal() {
+  if (isRecordingActive) {
+    document.getElementById('startRecBtn').classList.add('hidden');
+    document.getElementById('stopRecBtn').classList.remove('hidden');
+    document.getElementById('stopRecBtn').classList.add('flex');
+    document.getElementById('modalRecStatus').classList.remove('hidden');
+  } else {
+    document.getElementById('startRecBtn').classList.remove('hidden');
+    document.getElementById('stopRecBtn').classList.add('hidden');
+    document.getElementById('stopRecBtn').classList.remove('flex');
+    document.getElementById('modalRecStatus').classList.add('hidden');
+  }
+  const modal = document.getElementById('recordModal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+}
+
+function closeRecordModal() {
+  const modal = document.getElementById('recordModal');
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+}
+
+function selectRecordMode(mode) {
+  currentRecordMode = mode;
+  const aBtn = document.getElementById('recModeAudioBtn');
+  const vBtn = document.getElementById('recModeVideoBtn');
+  const aOpts = document.getElementById('audioFormatOptions');
+  const vOpts = document.getElementById('videoFormatOptions');
+
+  if (mode === 'audio') {
+    aBtn.className = 'p-3.5 rounded-2xl border-2 border-sky-500 bg-sky-50 text-left transition flex flex-col justify-between shadow-sm';
+    vBtn.className = 'p-3.5 rounded-2xl border-2 border-slate-200 bg-slate-50 hover:bg-slate-100 text-left transition flex flex-col justify-between';
+    if (aOpts) aOpts.classList.remove('hidden');
+    if (vOpts) vOpts.classList.add('hidden');
+  } else {
+    vBtn.className = 'p-3.5 rounded-2xl border-2 border-sky-500 bg-sky-50 text-left transition flex flex-col justify-between shadow-sm';
+    aBtn.className = 'p-3.5 rounded-2xl border-2 border-slate-200 bg-slate-50 hover:bg-slate-100 text-left transition flex flex-col justify-between';
+    if (aOpts) aOpts.classList.add('hidden');
+    if (vOpts) vOpts.classList.remove('hidden');
+  }
+}
+
+async function startStudioRecording() {
+  unlockAudioContext(true);
+  const ctx = getOrCreateAudioContext();
+
+  try {
+    isRecordingActive = true;
+
+    // 1. Create High-Fidelity Master Mixed Audio Bus
+    recordingDestNode = ctx.createMediaStreamDestination();
+    
+    recLimiterNode = ctx.createDynamicsCompressor();
+    recLimiterNode.threshold.setValueAtTime(-6, ctx.currentTime);
+    recLimiterNode.knee.setValueAtTime(10, ctx.currentTime);
+    recLimiterNode.ratio.setValueAtTime(12, ctx.currentTime);
+    recLimiterNode.attack.setValueAtTime(0.002, ctx.currentTime);
+    recLimiterNode.release.setValueAtTime(0.1, ctx.currentTime);
+
+    recAnalyserNode = ctx.createAnalyser();
+    recAnalyserNode.fftSize = 128;
+
+    // Mix Local Audio (with Highpass 80Hz + Studio Compressor + Gain)
+    if (inputGainNode) {
+      inputGainNode.connect(recLimiterNode);
+    } else if (localStream && localStream.getAudioTracks().length > 0) {
+      const src = ctx.createMediaStreamSource(localStream);
+      src.connect(recLimiterNode);
+    }
+
+    // Mix All Remote Band Peer Audio Streams
+    for (const peerName in remoteStreams) {
+      const stream = remoteStreams[peerName];
+      if (stream.getAudioTracks().length > 0) {
+        const peerSource = ctx.createMediaStreamSource(stream);
+        peerSource.connect(recLimiterNode);
+      }
+    }
+
+    recLimiterNode.connect(recAnalyserNode);
+    recAnalyserNode.connect(recordingDestNode);
+
+    // Setup Real-time Master VU Meter in Modal
+    if (recVuInterval) clearInterval(recVuInterval);
+    const vuData = new Uint8Array(recAnalyserNode.frequencyBinCount);
+    const recVuBar = document.getElementById('recModalVuBar');
+    recVuInterval = setInterval(() => {
+      if (!isRecordingActive) {
+        if (recVuBar) recVuBar.style.width = '0%';
+        return;
+      }
+      recAnalyserNode.getByteFrequencyData(vuData);
+      let sum = 0;
+      for (let i = 0; i < vuData.length; i++) sum += vuData[i];
+      let avg = sum / vuData.length;
+      let pct = Math.min(100, Math.round((avg / 120) * 100));
+      if (recVuBar) recVuBar.style.width = pct + '%';
+    }, 50);
+
+    let recordedStream = null;
+    let mimeType = '';
+
+    if (currentRecordMode === 'video') {
+      // 2. High Resolution Band Video Grid Compositor (1080p FHD / 720p HD @ 30fps)
+      const canvas = document.getElementById('recordCanvas');
+      const cCtx = canvas.getContext('2d');
+      const is1080p = (videoRecordQuality === '1080p');
+      const targetW = is1080p ? 1920 : 1280;
+      const targetH = is1080p ? 1080 : 720;
+      canvas.width = targetW;
+      canvas.height = targetH;
+
+      if (canvasDrawInterval) clearInterval(canvasDrawInterval);
+      canvasDrawInterval = setInterval(() => {
+        // Studio Stage Dark Backdrop
+        const bgGrad = cCtx.createLinearGradient(0, 0, 0, targetH);
+        bgGrad.addColorStop(0, '#0f172a');
+        bgGrad.addColorStop(1, '#020617');
+        cCtx.fillStyle = bgGrad;
+        cCtx.fillRect(0, 0, targetW, targetH);
+
+        // Studio Top Header / Watermark Banner
+        cCtx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+        cCtx.fillRect(0, 0, targetW, is1080p ? 60 : 44);
+        cCtx.fillStyle = '#38bdf8';
+        cCtx.font = `bold ${is1080p ? 22 : 16}px sans-serif`;
+        cCtx.textAlign = 'left';
+        cCtx.fillText(`🎸 Music Room Studio — Live Session #${ROOM_CODE} · ${currentBpm} BPM`, 20, is1080p ? 38 : 28);
+
+        cCtx.fillStyle = '#94a3b8';
+        cCtx.font = `normal ${is1080p ? 14 : 11}px sans-serif`;
+        cCtx.textAlign = 'right';
+        const nowStr = new Date().toLocaleTimeString('th-TH');
+        cCtx.fillText(`🔴 LIVE MASTER · ${nowStr}`, targetW - 20, is1080p ? 38 : 28);
+
+        // Gather all video tiles on stage
+        const stageVideos = Array.from(document.querySelectorAll('#stageGrid > div'));
+        const count = stageVideos.length || 1;
+        let cols = count === 1 ? 1 : (count <= 4 ? 2 : 3);
+        let rows = Math.ceil(count / cols);
+
+        const stageTopOffset = is1080p ? 70 : 52;
+        const availH = targetH - stageTopOffset - 16;
+        const cellW = (targetW - 24) / cols;
+        const cellH = availH / rows;
+
+        stageVideos.forEach((tile, i) => {
+          let r = Math.floor(i / cols);
+          let c = i % cols;
+          let x = 12 + c * cellW;
+          let y = stageTopOffset + r * cellH;
+          let innerW = cellW - 12;
+          let innerH = cellH - 12;
+
+          const vid = tile.querySelector('video');
+          const nameEl = tile.querySelector('.font-bold.text-slate-800, .font-bold.text-white');
+          const peerName = nameEl ? nameEl.textContent.replace('(คุณ)', '').trim() : `Musician ${i+1}`;
+
+          if (vid && !vid.classList.contains('hidden') && vid.videoWidth > 0) {
+            // Calculate object-fit: cover center crop
+            const vidRatio = vid.videoWidth / vid.videoHeight;
+            const tileRatio = innerW / innerH;
+            let sx = 0, sy = 0, sw = vid.videoWidth, sh = vid.videoHeight;
+
+            if (vidRatio > tileRatio) {
+              sw = vid.videoHeight * tileRatio;
+              sx = (vid.videoWidth - sw) / 2;
+            } else {
+              sh = vid.videoWidth / tileRatio;
+              sy = (vid.videoHeight - sh) / 2;
+            }
+
+            cCtx.save();
+            cCtx.beginPath();
+            cCtx.roundRect(x, y, innerW, innerH, is1080p ? 16 : 10);
+            cCtx.clip();
+            cCtx.drawImage(vid, sx, sy, sw, sh, x, y, innerW, innerH);
+            cCtx.restore();
+          } else {
+            // Draw sleek Musician Fallback Card
+            cCtx.fillStyle = '#1e293b';
+            cCtx.beginPath();
+            cCtx.roundRect(x, y, innerW, innerH, is1080p ? 16 : 10);
+            cCtx.fill();
+            cCtx.strokeStyle = 'rgba(56, 189, 248, 0.2)';
+            cCtx.lineWidth = 2;
+            cCtx.stroke();
+
+            // Avatar Icon
+            cCtx.fillStyle = '#38bdf8';
+            cCtx.font = `bold ${is1080p ? 48 : 32}px sans-serif`;
+            cCtx.textAlign = 'center';
+            cCtx.fillText('🎸', x + innerW/2, y + innerH/2 - (is1080p ? 10 : 5));
+          }
+
+          // Lower Third Artist Name Badge
+          cCtx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+          cCtx.beginPath();
+          cCtx.roundRect(x + 10, y + innerH - (is1080p ? 42 : 30), innerW - 20, is1080p ? 34 : 24, 8);
+          cCtx.fill();
+
+          cCtx.fillStyle = '#ffffff';
+          cCtx.font = `bold ${is1080p ? 16 : 12}px sans-serif`;
+          cCtx.textAlign = 'left';
+          cCtx.fillText(`🎵 ${peerName}`, x + 20, y + innerH - (is1080p ? 19 : 14));
+
+          cCtx.fillStyle = '#34d399';
+          cCtx.beginPath();
+          cCtx.arc(x + innerW - 25, y + innerH - (is1080p ? 25 : 18), is1080p ? 5 : 3.5, 0, Math.PI * 2);
+          cCtx.fill();
+        });
+      }, 1000 / 30);
+
+      const canvasStream = canvas.captureStream(30);
+      const mixedTracks = [...recordingDestNode.stream.getAudioTracks(), ...canvasStream.getVideoTracks()];
+      recordedStream = new MediaStream(mixedTracks);
+
+      if (MediaRecorder.isTypeSupported('video/mp4;codecs=avc1,mp4a.40.2')) {
+        mimeType = 'video/mp4;codecs=avc1,mp4a.40.2';
+      } else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')) {
+        mimeType = 'video/webm;codecs=vp9,opus';
+      } else if (MediaRecorder.isTypeSupported('video/mp4')) {
+        mimeType = 'video/mp4';
+      } else {
+        mimeType = 'video/webm';
+      }
+
+      const videoBitrate = is1080p ? 6000000 : 3500000;
+      mediaRecorder = new MediaRecorder(recordedStream, {
+        mimeType,
+        videoBitsPerSecond: videoBitrate,
+        audioBitsPerSecond: 320000
+      });
+
+      recordedChunks = [];
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) recordedChunks.push(e.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        if (canvasDrawInterval) clearInterval(canvasDrawInterval);
+        const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
+        const blob = new Blob(recordedChunks, { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `MusicRoom_LiveSession_${videoRecordQuality}_${ROOM_CODE}_${Date.now()}.${ext}`;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 2500);
+        showToast(`บันทึกวิดีโอ HD เสร็จสิ้น! กำลังดาวน์โหลดไฟล์ 🎬`, "ok");
+      };
+
+      mediaRecorder.start(1000);
+    } else {
+      // 3. Audio-Only Studio Master Mode (Lossless WAV or Opus 320kbps)
+      if (audioRecordFormat === 'wav') {
+        // Pure Lossless 16-bit 48kHz Stereo WAV Recorder
+        pcmChunksL = [];
+        pcmChunksR = [];
+        
+        pcmRecorderNode = ctx.createScriptProcessor(4096, 2, 2);
+        pcmRecorderNode.onaudioprocess = (e) => {
+          if (!isRecordingActive) return;
+          const left = e.inputBuffer.getChannelData(0);
+          const right = e.inputBuffer.numberOfChannels > 1 ? e.inputBuffer.getChannelData(1) : left;
+          pcmChunksL.push(new Float32Array(left));
+          pcmChunksR.push(new Float32Array(right));
+        };
+
+        recLimiterNode.connect(pcmRecorderNode);
+        // Connect to muted gain node to keep processor active without duplicate output
+        const dummyMute = ctx.createGain();
+        dummyMute.gain.value = 0;
+        pcmRecorderNode.connect(dummyMute);
+        dummyMute.connect(ctx.destination);
+      } else {
+        // Compressed Opus / WebM 320kbps
+        recordedStream = recordingDestNode.stream;
+        if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+          mimeType = 'audio/webm;codecs=opus';
+        } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+          mimeType = 'audio/mp4';
+        } else {
+          mimeType = 'audio/webm';
+        }
+
+        mediaRecorder = new MediaRecorder(recordedStream, {
+          mimeType,
+          audioBitsPerSecond: 320000
+        });
+
+        recordedChunks = [];
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data.size > 0) recordedChunks.push(e.data);
+        };
+
+        mediaRecorder.onstop = () => {
+          const ext = mimeType.includes('mp4') ? 'm4a' : 'webm';
+          const blob = new Blob(recordedChunks, { type: mimeType });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `MusicRoom_AudioMaster_${ROOM_CODE}_${Date.now()}.${ext}`;
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 2500);
+          showToast("บันทึกไฟล์เสียง Master เสร็จสิ้น! กำลังดาวน์โหลด 🎵", "ok");
+        };
+
+        mediaRecorder.start(1000);
+      }
+    }
+
+    recordStartTime = Date.now();
+
+    // Update UI Elements
+    document.getElementById('recordBtn').classList.add('bg-rose-500', 'text-white');
+    document.getElementById('recDot').classList.add('rec-blink');
+    document.getElementById('recText').textContent = 'กำลังบันทึก...';
+    document.getElementById('recTimer').classList.remove('hidden');
+    document.getElementById('mRecTimer').classList.remove('hidden');
+
+    document.getElementById('startRecBtn').classList.add('hidden');
+    document.getElementById('stopRecBtn').classList.remove('hidden');
+    document.getElementById('stopRecBtn').classList.add('flex');
+    document.getElementById('modalRecStatus').classList.remove('hidden');
+
+    const typeTitle = (currentRecordMode === 'audio') 
+      ? `กำลังบันทึกเสียง (${audioRecordFormat.toUpperCase()} Master)...` 
+      : `กำลังบันทึกวิดีโอ (${videoRecordQuality} Full-Band)...`;
+    document.getElementById('modalRecTypeTitle').textContent = typeTitle;
+
+    if (recordTimerInterval) clearInterval(recordTimerInterval);
+    recordTimerInterval = setInterval(() => {
+      const elapsedSec = Math.floor((Date.now() - recordStartTime) / 1000);
+      const m = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
+      const s = String(elapsedSec % 60).padStart(2, '0');
+      const timerStr = `${m}:${s}`;
+      document.getElementById('recTimer').textContent = timerStr;
+      document.getElementById('mRecTimer').textContent = timerStr;
+      document.getElementById('modalRecTimer').textContent = timerStr;
+    }, 1000);
+
+    closeRecordModal();
+    showToast(`เริ่มบันทึก ${currentRecordMode === 'audio' ? 'เสียง Hi-Fi Master' : 'วิดีโอรวมทั้งวง HD'} แล้ว 🔴`, "ok");
+  } catch(err) {
+    console.error("Recording error:", err);
+    isRecordingActive = false;
+    showToast("ไม่สามารถเริ่มการบันทึกได้บนเบราว์เซอร์นี้", "error");
+  }
+}
+
+function stopStudioRecording() {
+  if (!isRecordingActive) return;
+  isRecordingActive = false;
+
+  if (recordTimerInterval) clearInterval(recordTimerInterval);
+  if (canvasDrawInterval) clearInterval(canvasDrawInterval);
+  if (recVuInterval) clearInterval(recVuInterval);
+
+  if (currentRecordMode === 'audio' && audioRecordFormat === 'wav') {
+    // Process and export lossless WAV
+    try {
+      let totalSamples = 0;
+      for (let i = 0; i < pcmChunksL.length; i++) totalSamples += pcmChunksL[i].length;
+
+      const flatL = new Float32Array(totalSamples);
+      const flatR = new Float32Array(totalSamples);
+      let offset = 0;
+      for (let i = 0; i < pcmChunksL.length; i++) {
+        flatL.set(pcmChunksL[i], offset);
+        flatR.set(pcmChunksR[i], offset);
+        offset += pcmChunksL[i].length;
+      }
+
+      if (pcmRecorderNode) {
+        try { pcmRecorderNode.disconnect(); } catch(e) {}
+        pcmRecorderNode = null;
+      }
+
+      const wavBlob = encodeWAV(flatL, flatR, 48000);
+      const url = URL.createObjectURL(wavBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `MusicRoom_StudioMaster_${ROOM_CODE}_${Date.now()}.wav`;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 2500);
+      showToast("บันทึกเสร็จสิ้น! ดาวน์โหลดไฟล์ WAV Studio Master (Lossless 48kHz) เรียบร้อย 🎵", "ok");
+    } catch(err) {
+      console.error("WAV export error:", err);
+      showToast("เกิดข้อผิดพลาดในการสร้างไฟล์ WAV", "error");
+    }
+  } else if (mediaRecorder && mediaRecorder.state === 'recording') {
+    mediaRecorder.stop();
+  }
+
+  // Reset UI
+  document.getElementById('recordBtn').classList.remove('bg-rose-500', 'text-white');
+  document.getElementById('recDot').classList.remove('rec-blink');
+  document.getElementById('recText').textContent = 'บันทึกสด (REC)';
+  document.getElementById('recTimer').classList.add('hidden');
+  document.getElementById('mRecTimer').classList.add('hidden');
+
+  document.getElementById('startRecBtn').classList.remove('hidden');
+  document.getElementById('stopRecBtn').classList.add('hidden');
+  document.getElementById('stopRecBtn').classList.remove('flex');
+  document.getElementById('modalRecStatus').classList.add('hidden');
+
+  closeRecordModal();
+}
+
+// ──────────────── Toggle Audio / Video Tracks ────────────────
 async function toggleAudioMode() {
   isInstrumentMode = !isInstrumentMode;
   const icon = document.getElementById('audioModeIcon');
@@ -1506,7 +2307,7 @@ async function toggleAudioMode() {
     if (icon) icon.textContent = '🎸';
     if (text) text.textContent = 'เครื่องดนตรีจริง (Hi-Fi)';
     if (badge) { badge.textContent = 'LIVE HI-FI'; badge.className = 'text-[10px] text-emerald-400 font-mono font-bold'; }
-    showToast("เปิดโหมดเครื่องดนตรีจริง (ปิด Echo/Noise Filter เพื่อเสียงใสเต็มย่าน)", "ok");
+    showToast("เปิดโหมดเครื่องดนตรีจริง (ปิด DSP Speech Filter เสียงใสเต็มย่าน)", "ok");
   } else {
     if (icon) icon.textContent = '🎙️';
     if (text) text.textContent = 'ไมค์พูดคุย (Voice)';
@@ -1517,7 +2318,6 @@ async function toggleAudioMode() {
   await refreshAudioTrack();
 }
 
-// ──────────────── Toggle Audio / Video Tracks ────────────────
 function toggleAudioTrack() {
   if (!audioTrack) {
     initStudioMedia();
@@ -1592,14 +2392,11 @@ async function toggleVideoTrack() {
   }
 }
 
-// ──────────────── Screen / Sheet Music Share ────────────────
 async function toggleScreenShare() {
   if (isScreenSharing) {
     isScreenSharing = false;
     document.getElementById('shareScreenText').textContent = 'แชร์โน้ต/จอ';
-    if (videoTrack) {
-      toggleVideoTrack();
-    }
+    if (videoTrack) toggleVideoTrack();
     return;
   }
 
@@ -1640,7 +2437,7 @@ async function toggleScreenShare() {
   }
 }
 
-// ──────────────── WebRTC Signaling & Peer Mesh Management ────────────────
+// ──────────────── WebRTC Signaling & Peer Mesh ────────────────
 function getOrCreatePeerConnection(peerName) {
   if (peerConnections[peerName]) return peerConnections[peerName];
 
@@ -1773,9 +2570,9 @@ function setPeerVolume(tileId, vol) {
 
 function setupPeerAudioMeter(stream, vuId) {
   try {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const source = audioCtx.createMediaStreamSource(stream);
-    const analyser = audioCtx.createAnalyser();
+    const ctx = getOrCreateAudioContext();
+    const source = ctx.createMediaStreamSource(stream);
+    const analyser = ctx.createAnalyser();
     analyser.fftSize = 64;
     source.connect(analyser);
 
@@ -2007,202 +2804,6 @@ async function handleChatFileUpload(input) {
     input.value = '';
   };
   reader.readAsDataURL(file);
-}
-
-// ──────────────── Studio Metronome & Tap Tempo ────────────────
-function toggleMetronome() {
-  unlockAudioContext(true);
-  metronomePlaying = !metronomePlaying;
-  const btn = document.getElementById('metronomeBtn');
-  const dot = document.getElementById('metroIndicator');
-  const mDot = document.getElementById('mMetroIndicator');
-
-  if (metronomePlaying) {
-    if (btn) btn.classList.add('bg-sky-600', 'text-white');
-    startMetronomeLoop();
-  } else {
-    if (btn) btn.classList.remove('bg-sky-600', 'text-white');
-    if (metronomeInterval) clearInterval(metronomeInterval);
-    if (dot) dot.className = 'h-3 w-3 rounded-full bg-slate-300';
-    if (mDot) mDot.className = 'h-2.5 w-2.5 rounded-full bg-slate-300';
-  }
-}
-
-function startMetronomeLoop() {
-  if (metronomeInterval) clearInterval(metronomeInterval);
-  const intervalMs = (60 / currentBpm) * 1000;
-  let beat = 0;
-
-  metronomeInterval = setInterval(() => {
-    beat = (beat % 4) + 1;
-    playMetronomeClick(beat === 1);
-
-    const dot = document.getElementById('metroIndicator');
-    const mDot = document.getElementById('mMetroIndicator');
-    if (dot) dot.className = `h-3 w-3 rounded-full ${beat === 1 ? 'bg-sky-500 shadow-md shadow-sky-500/80 scale-125' : 'bg-blue-400 scale-100'} transition duration-75`;
-    if (mDot) mDot.className = `h-2.5 w-2.5 rounded-full ${beat === 1 ? 'bg-sky-500' : 'bg-blue-400'}`;
-  }, intervalMs);
-}
-
-function playMetronomeClick(accent) {
-  try {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.frequency.value = accent ? 1200 : 800;
-    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
-
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.05);
-  } catch(e) {}
-}
-
-function updateBpm(bpm) {
-  currentBpm = parseInt(bpm) || 120;
-  document.getElementById('bpmInput').value = currentBpm;
-  document.getElementById('mBpmVal').textContent = currentBpm;
-  document.getElementById('toolBpmDisplay').textContent = currentBpm + ' BPM';
-  if (metronomePlaying) startMetronomeLoop();
-}
-
-let tapTimes = [];
-function tapTempo() {
-  const now = Date.now();
-  tapTimes.push(now);
-  if (tapTimes.length > 4) tapTimes.shift();
-
-  if (tapTimes.length >= 2) {
-    let diffs = [];
-    for (let i = 1; i < tapTimes.length; i++) diffs.push(tapTimes[i] - tapTimes[i-1]);
-    let avg = diffs.reduce((a, b) => a + b) / diffs.length;
-    let bpm = Math.round(60000 / avg);
-    if (bpm >= 40 && bpm <= 240) {
-      updateBpm(bpm);
-    }
-  }
-}
-
-// ──────────────── Tuner Reference Notes ────────────────
-function playNoteFrequency(freq, name) {
-  stopAllTunerTones();
-  unlockAudioContext(true);
-  try {
-    tunerOscillator = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    tunerOscillator.type = 'triangle';
-    tunerOscillator.frequency.value = freq;
-    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-
-    tunerOscillator.connect(gain);
-    gain.connect(audioCtx.destination);
-    tunerOscillator.start();
-    showToast(`เล่นเสียง ${name} (${freq} Hz)`, "ok");
-  } catch(e) {}
-}
-
-function playA440Tone() {
-  if (tunerOscillator) {
-    stopAllTunerTones();
-  } else {
-    playNoteFrequency(440, "A440 (มาตรฐานสากล)");
-  }
-}
-
-function stopAllTunerTones() {
-  if (tunerOscillator) {
-    try { tunerOscillator.stop(); tunerOscillator.disconnect(); } catch(e) {}
-    tunerOscillator = null;
-  }
-}
-
-// ──────────────── Live Video & Audio Recording Studio ────────────────
-async function toggleRecording() {
-  unlockAudioContext(true);
-  if (mediaRecorder && mediaRecorder.state === 'recording') {
-    mediaRecorder.stop();
-    clearInterval(recordTimerInterval);
-    document.getElementById('recordBtn').classList.remove('bg-rose-500', 'text-white');
-    document.getElementById('recDot').classList.remove('rec-blink');
-    document.getElementById('recText').textContent = 'บันทึกวิดีโอ & เสียง';
-    document.getElementById('recTimer').classList.add('hidden');
-    document.getElementById('mRecTimer').classList.add('hidden');
-    return;
-  }
-
-  try {
-    const dest = audioCtx.createMediaStreamDestination();
-
-    if (localStream && localStream.getAudioTracks().length > 0) {
-      const src = audioCtx.createMediaStreamSource(localStream);
-      src.connect(dest);
-    }
-
-    for (const peerName in remoteStreams) {
-      const stream = remoteStreams[peerName];
-      if (stream.getAudioTracks().length > 0) {
-        const peerSource = audioCtx.createMediaStreamSource(stream);
-        peerSource.connect(dest);
-      }
-    }
-
-    const tracks = [...dest.stream.getAudioTracks()];
-    if (localStream && localStream.getVideoTracks().length > 0) {
-      tracks.push(localStream.getVideoTracks()[0]);
-    }
-
-    const mixedStream = new MediaStream(tracks);
-    recordedChunks = [];
-    
-    let mimeType = 'video/webm;codecs=vp9,opus';
-    if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/webm';
-    if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'audio/webm';
-
-    mediaRecorder = new MediaRecorder(mixedStream, { mimeType });
-
-    mediaRecorder.ondataavailable = (e) => {
-      if (e.data.size > 0) recordedChunks.push(e.data);
-    };
-
-    mediaRecorder.onstop = () => {
-      const blob = new Blob(recordedChunks, { type: mimeType });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `MusicRoom_Rehearsal_${ROOM_CODE}_${Date.now()}.webm`;
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 2000);
-      showToast("บันทึกเสร็จสิ้น! กำลังดาวน์โหลดไฟล์การซ้อมดนตรี", "ok");
-    };
-
-    mediaRecorder.start(1000);
-    recordStartTime = Date.now();
-
-    document.getElementById('recordBtn').classList.add('bg-rose-500', 'text-white');
-    document.getElementById('recDot').classList.add('rec-blink');
-    document.getElementById('recText').textContent = 'กำลังบันทึก (REC)';
-    document.getElementById('recTimer').classList.remove('hidden');
-    document.getElementById('mRecTimer').classList.remove('hidden');
-
-    recordTimerInterval = setInterval(() => {
-      const elapsedSec = Math.floor((Date.now() - recordStartTime) / 1000);
-      const m = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
-      const s = String(elapsedSec % 60).padStart(2, '0');
-      const timerStr = `${m}:${s}`;
-      document.getElementById('recTimer').textContent = timerStr;
-      document.getElementById('mRecTimer').textContent = timerStr;
-    }, 1000);
-
-    showToast("เริ่มบันทึกการซ้อมดนตรีสดแล้ว 🔴", "ok");
-  } catch(err) {
-    console.error("Recording failed:", err);
-    showToast("ไม่สามารถเริ่มบันทึกได้บนเบราว์เซอร์นี้", "error");
-  }
 }
 
 // ──────────────── UI Helpers ────────────────
