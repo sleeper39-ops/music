@@ -4,11 +4,12 @@ Music Room — ห้องซ้อมดนตรีออนไลน์ & Li
 - ซ้อมดนตรีสด & แจมเพลงออนไลน์แบบ Ultra-Low Latency (WebRTC Peer-to-Peer)
 - รองรับทั้งการต่อ "เครื่องดนตรีจริง" (กีตาร์ เบส คีย์บอร์ด กลองไฟฟ้า ผ่าน Audio Interface / iPhone / iPad)
   และโหมดพูดคุยผ่านไมค์ พร้อมปิด DSP Echo Cancellation/Noise Filter ในโหมดดนตรี เพื่อเสียงที่ใส คมชัด ไม่โดนตัดทอน
+- ระบบเลือกอุปกรณ์ Audio Interface / Sound Card / ไมค์ / ลำโพง-หูฟัง โดยตรง
+- ระบบ Direct In-Ear Monitor (🎧 ฟังเสียงตัวเองในหูฟัง) ปรับ Gain ความดังได้ 0 - 300%
 - เปิดกล้องวิดีโอ (Webcam / มือถือ) และแชร์หน้าจอ / โน้ตเพลง / DAW
 - ระบบบันทึกวิดีโอและเสียงสด (Live Studio Recorder) พร้อมดาวน์โหลดไฟล์
 - เครื่องเคาะจังหวะ Metronome ซิงค์ห้อง + เครื่องเทียบเสียง Tuner
 - แชทสด ส่งคอร์ด แท็บเพลง แนบไฟล์เสียง/ภาพ
-- รองรับการเชื่อมต่อผ่าน Wi-Fi, LAN, Tailscale VPN และสแกน QR Code สำหรับมือถือ/แท็บเล็ต
 """
 
 import base64
@@ -24,14 +25,14 @@ from flask import (Flask, request, session, redirect, url_for, jsonify,
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "music-room-sky-blue-key-2026")
-app.config['MAX_CONTENT_LENGTH'] = 64 * 1024 * 1024  # รองรับไฟล์ขนาดสูงสุด 64 MB
+app.config['MAX_CONTENT_LENGTH'] = 64 * 1024 * 1024
 DB_PATH = os.environ.get("CHAT_DB", "chat.db")
 
 MAX_NAME = 30
 MAX_ROOM_NAME = 50
 MAX_MSG = 4000
 MAX_PASSWORD = 30
-ONLINE_WINDOW = 12  # วินาที — ถือว่าออนไลน์ถ้า poll ภายในช่วงนี้
+ONLINE_WINDOW = 12
 
 
 # ───────────────────────────── Network Helpers ─────────────────────────────
@@ -708,7 +709,7 @@ PASSWORD_PROMPT = r"""
 
 # ───────────────────────────── Main Studio Rehearsal Room (Bright Sky Blue) ─────────────────────────────
 ROOM = r"""
-<div class="min-h-screen bg-slate-100 text-slate-800 flex flex-col h-screen overflow-hidden">
+<div class="min-h-screen bg-slate-100 text-slate-800 flex flex-col h-screen overflow-hidden" onclick="unlockAudioContext()">
   <!-- Top Control Bar / Studio Header -->
   <header class="bg-white/95 backdrop-blur-md border-b border-sky-100 px-3 py-2 shrink-0 z-30 flex items-center justify-between gap-2 shadow-sm">
     <!-- Left: Room info & back -->
@@ -763,8 +764,20 @@ ROOM = r"""
       </div>
     </div>
 
-    <!-- Right: Audio Mode Selector & Controls -->
+    <!-- Right: Audio Setup & Mode Selector -->
     <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+      <!-- Audio Hardware Setup Button -->
+      <button onclick="openAudioSettingsModal()" class="px-2.5 py-1.5 rounded-xl bg-white hover:bg-sky-50 text-sky-800 border border-sky-200 text-xs font-bold flex items-center gap-1.5 transition shadow-sm" title="ตั้งค่า Sound Card / ไมค์ / ลำโพง / หูฟัง">
+        <span>⚙️</span>
+        <span class="hidden sm:inline">ตั้งค่า Sound Card</span>
+      </button>
+
+      <!-- Direct In-Ear Monitor Toggle (Hear Myself) -->
+      <button id="monitorBtn" onclick="toggleSelfMonitor()" class="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-sky-100 text-slate-700 border border-slate-200 text-xs font-bold flex items-center gap-1.5 transition shadow-sm" title="ฟังเสียงตัวเองในหูฟังสดๆ Direct Monitoring">
+        <span id="monitorIcon">🎧</span>
+        <span class="hidden lg:inline" id="monitorText">ฟังเสียงตัวเอง (OFF)</span>
+      </button>
+
       <!-- Instrument / Mic Audio Mode Switch -->
       <button id="audioModeBtn" onclick="toggleAudioMode()" class="px-2.5 py-1.5 rounded-xl bg-sky-100 hover:bg-sky-200 text-sky-800 border border-sky-300 text-xs font-bold flex items-center gap-1.5 transition shadow-sm" title="คลิกเพื่อสลับระหว่างโหมดเครื่องดนตรีจริง (ปิด Echo Filter เสียงใสเต็มย่าน) หรือโหมดไมค์พูดคุย">
         <span id="audioModeIcon">🎸</span>
@@ -782,6 +795,17 @@ ROOM = r"""
       {% endif %}
     </div>
   </header>
+
+  <!-- Autoplay Audio Unlock Banner if suspended -->
+  <div id="audioUnlockBanner" class="bg-gradient-to-r from-sky-600 to-blue-600 text-white px-4 py-2 text-xs font-bold flex items-center justify-between hidden shadow-md">
+    <div class="flex items-center gap-2">
+      <span>🔊</span>
+      <span>เบราว์เซอร์หยุดระบบเสียงอัตโนมัติ กรุณากดปุ่มเพื่อเปิดใช้งานเสียงเต็มรูปแบบ</span>
+    </div>
+    <button onclick="unlockAudioContext(true)" class="px-3 py-1 bg-white text-sky-700 rounded-lg font-bold hover:bg-sky-50 shadow-sm transition">
+      เปิดเสียงเดี๋ยวนี้
+    </button>
+  </div>
 
   <!-- Mobile Metronome & Record bar -->
   <div class="md:hidden flex items-center justify-between px-3 py-1.5 bg-sky-50 border-b border-sky-200 text-xs">
@@ -874,10 +898,16 @@ ROOM = r"""
             <span id="shareScreenText">แชร์โน้ต/จอ</span>
           </button>
 
+          <!-- Audio Settings Modal Trigger -->
+          <button onclick="openAudioSettingsModal()" class="px-3 py-2 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 font-bold text-xs flex items-center gap-1.5 transition">
+            <span>🎛️</span>
+            <span>อุปกรณ์เสียง & Gain</span>
+          </button>
+
           <!-- Instrument Tuner Quick Modal -->
           <button onclick="toggleTunerModal()" class="px-3 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 font-bold text-xs flex items-center gap-1.5 transition">
             <span>🎯</span>
-            <span>เทียบเสียง Tuner (A440)</span>
+            <span>เทียบเสียง Tuner</span>
           </button>
         </div>
 
@@ -947,13 +977,26 @@ ROOM = r"""
       <!-- Tab 2: Band Members Tab -->
       <div id="tabMembers" class="flex-1 p-3 overflow-y-auto space-y-2 hidden">
         <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">สมาชิกในห้องซ้อม</h4>
-        <div id="membersList" class="space-y-2">
-          <!-- Dynamic Member Items -->
-        </div>
+        <div id="membersList" class="space-y-2"></div>
       </div>
 
-      <!-- Tab 3: Studio Tools Tab (Metronome, Tuner, Audio Device settings) -->
+      <!-- Tab 3: Studio Tools Tab -->
       <div id="tabTools" class="flex-1 p-4 overflow-y-auto space-y-4 hidden text-xs">
+        <div class="glass-card rounded-2xl p-3 border border-sky-100 space-y-2 shadow-sm">
+          <h4 class="font-bold text-slate-800 flex items-center gap-1.5">
+            <span>🎧</span> <span>ฟังเสียงตัวเอง (Direct Monitoring)</span>
+          </h4>
+          <p class="text-[11px] text-slate-500 leading-relaxed">
+            เปิดเพื่อให้เสียงจากไมค์ / Audio Interface ดังเข้าหูฟังของคุณทันที (แนะนำให้ใส่หูฟัง)
+          </p>
+          <div class="flex items-center gap-2 pt-1">
+            <button onclick="toggleSelfMonitor()" id="toolMonitorBtn" class="px-3 py-1.5 bg-sky-600 text-white font-bold rounded-lg transition text-xs">
+              เปิดฟังเสียงตัวเอง
+            </button>
+            <input type="range" id="monitorVolRange" min="0" max="1.5" step="0.05" value="0.8" oninput="setMonitorVolume(this.value)" class="flex-1 accent-sky-600" title="ระดับเสียงหูฟัง">
+          </div>
+        </div>
+
         <div class="glass-card rounded-2xl p-3 border border-sky-100 space-y-2 shadow-sm">
           <h4 class="font-bold text-slate-800 flex items-center gap-1.5">
             <span>⏱️</span> <span>เครื่องเคาะจังหวะ Metronome</span>
@@ -975,25 +1018,11 @@ ROOM = r"""
 
         <div class="glass-card rounded-2xl p-3 border border-sky-100 space-y-2 shadow-sm">
           <h4 class="font-bold text-slate-800 flex items-center gap-1.5">
-            <span>🎸</span> <span>โหมดเสียงเครื่องดนตรี (Instrument DSP)</span>
+            <span>🔊</span> <span>ทดสอบเสียงลำโพง / หูฟัง</span>
           </h4>
-          <p class="text-[11px] text-slate-600 leading-relaxed">
-            เมื่อเปิดใช้งาน ระบบจะ<strong>ปิดการตัดเสียงก้อง (Echo Cancellation) และตัวกรองเสียงพูด (Noise Suppression)</strong> ของเบราว์เซอร์ เพื่อให้เสียงกีตาร์ เบส และกลอง ไม่ถูกตัดทอนความถี่ย่านเสียงดนตรี
-          </p>
-          <div class="pt-1">
-            <button onclick="toggleAudioMode()" class="w-full py-2 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-bold rounded-xl transition shadow-md shadow-sky-500/20">
-              สลับโหมดเสียง (ปัจจุบัน: <span id="toolModeText">Hi-Fi เครื่องดนตรี</span>)
-            </button>
-          </div>
-        </div>
-
-        <div class="glass-card rounded-2xl p-3 border border-sky-100 space-y-2 shadow-sm">
-          <h4 class="font-bold text-slate-800 flex items-center gap-1.5">
-            <span>🎯</span> <span>เทียบเสียงมาตรฐาน (A440 Reference Tone)</span>
-          </h4>
-          <p class="text-[11px] text-slate-600">สร้างเสียงความถี่มาตรฐาน 440Hz เพื่อจูนเครื่องดนตรี</p>
-          <button onclick="playA440Tone()" id="a440Btn" class="w-full py-1.5 bg-sky-50 border border-sky-200 text-sky-700 font-bold rounded-lg hover:bg-sky-100 transition">
-            🔊 เล่นเสียง A440 (กดซ้ำเพื่อหยุด)
+          <p class="text-[11px] text-slate-500">กดเพื่อทดสอบว่าหูฟังหรือลำโพงของคุณทำงานได้ยินเสียงหรือไม่</p>
+          <button onclick="playTestChime()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition shadow-sm">
+            🔔 เล่นเสียงทดสอบ (Test Sound Output)
           </button>
         </div>
       </div>
@@ -1010,14 +1039,82 @@ ROOM = r"""
       <span class="text-base" id="mMicBtnIcon">🎙️</span>
       <span class="text-[10px]">ส่งเสียง</span>
     </button>
-    <button onclick="toggleVideoTrack()" class="flex flex-col items-center gap-1 text-slate-600 font-bold">
-      <span class="text-base" id="mCamBtnIcon">📷</span>
-      <span class="text-[10px]">เปิดกล้อง</span>
+    <button onclick="toggleSelfMonitor()" class="flex flex-col items-center gap-1 text-purple-600 font-bold">
+      <span class="text-base">🎧</span>
+      <span class="text-[10px]">ฟังตัวเอง</span>
     </button>
-    <button onclick="toggleAudioMode()" class="flex flex-col items-center gap-1 text-blue-600 font-bold">
-      <span class="text-base">🎸</span>
-      <span class="text-[10px]">โหมดเสียง</span>
+    <button onclick="openAudioSettingsModal()" class="flex flex-col items-center gap-1 text-blue-600 font-bold">
+      <span class="text-base">⚙️</span>
+      <span class="text-[10px]">ตั้งค่าเสียง</span>
     </button>
+  </div>
+</div>
+
+<!-- Audio Hardware Settings Modal -->
+<div id="audioSettingsModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
+  <div class="bg-white rounded-3xl p-6 sm:p-7 max-w-md w-full border border-sky-100 text-left relative space-y-4 shadow-2xl">
+    <button onclick="closeAudioSettingsModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+    
+    <div class="flex items-center gap-3">
+      <div class="h-11 w-11 rounded-2xl bg-sky-100 text-sky-600 flex items-center justify-center text-xl font-bold border border-sky-200">
+        🎛️
+      </div>
+      <div>
+        <h3 class="text-lg font-bold text-slate-800 font-display">ตั้งค่าอุปกรณ์เสียง & Sound Card</h3>
+        <p class="text-xs text-slate-500">เลือกช่องสัญญาณเสียงเข้า-ออก และปรับความดัง</p>
+      </div>
+    </div>
+
+    <!-- Input device select -->
+    <div class="space-y-1.5">
+      <label class="block text-xs font-bold text-slate-700">🎤 ช่องสัญญาณเสียงเข้า (Input / Sound Card):</label>
+      <select id="audioInSelect" onchange="changeAudioInputDevice(this.value)" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-200">
+        <option value="">กำลังโหลดอุปกรณ์เสียง...</option>
+      </select>
+    </div>
+
+    <!-- Output device select (if supported) -->
+    <div class="space-y-1.5" id="audioOutBox">
+      <label class="block text-xs font-bold text-slate-700">🔊 ช่องสัญญาณเสียงออก (Output / หูฟัง / ลำโพง):</label>
+      <select id="audioOutSelect" onchange="changeAudioOutputDevice(this.value)" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-200">
+        <option value="">กำลังโหลดอุปกรณ์เสียง...</option>
+      </select>
+    </div>
+
+    <!-- Input Gain Booster -->
+    <div class="bg-sky-50/60 p-3 rounded-2xl border border-sky-100 space-y-2">
+      <div class="flex items-center justify-between text-xs font-bold text-slate-700">
+        <span>🎚️ เพิ่มความดังไมค์/เครื่องดนตรี (Input Gain):</span>
+        <span class="text-sky-700 font-mono" id="gainDisplay">100%</span>
+      </div>
+      <input type="range" id="inputGainSlider" min="0" max="3" step="0.1" value="1" oninput="setInputGain(this.value)" class="w-full accent-sky-600">
+      <div class="flex justify-between text-[10px] text-slate-400">
+        <span>0% (ปิด)</span>
+        <span>100% (ปกติ)</span>
+        <span>200% (ดังขึ้น)</span>
+        <span>300% (ขยายแรง)</span>
+      </div>
+    </div>
+
+    <!-- Direct Monitoring Toggle -->
+    <div class="bg-purple-50/60 p-3 rounded-2xl border border-purple-100 flex items-center justify-between">
+      <div>
+        <div class="text-xs font-bold text-purple-900">🎧 ฟังเสียงตัวเอง (Direct Monitor)</div>
+        <div class="text-[10px] text-purple-600">ส่งเสียงไมค์/กีตาร์ตรงเข้าหูฟังสดๆ</div>
+      </div>
+      <button onclick="toggleSelfMonitor()" id="modalMonitorBtn" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl text-xs transition">
+        เปิดฟังเสียง
+      </button>
+    </div>
+
+    <div class="pt-2 flex gap-2">
+      <button onclick="playTestChime()" class="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition">
+        🔔 ทดสอบเสียงออก
+      </button>
+      <button onclick="closeAudioSettingsModal()" class="px-6 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl text-xs transition">
+        เสร็จสิ้น
+      </button>
+    </div>
   </div>
 </div>
 
@@ -1076,8 +1173,17 @@ let audioTrack = null;
 let videoTrack = null;
 let isAudioEnabled = true;
 let isVideoEnabled = false;
-let isInstrumentMode = true; // true = Hi-Fi Stereo / DSP off, false = Voice mic
+let isInstrumentMode = true;
 let isScreenSharing = false;
+
+// Audio Device & Gain Nodes
+let selectedAudioInputId = '';
+let selectedAudioOutputId = '';
+let inputGainNode = null;
+let monitorGainNode = null;
+let isSelfMonitoring = false;
+let monitorVolume = 0.8;
+let inputGainValue = 1.0;
 
 // WebRTC Peer Connections Map: { [peerName]: RTCPeerConnection }
 const peerConnections = {};
@@ -1087,6 +1193,7 @@ let lastSignalId = 0;
 
 // Audio Context & VU Meter
 let audioCtx = null;
+let localSource = null;
 let localAnalyser = null;
 let localVuInterval = null;
 
@@ -1111,24 +1218,33 @@ const rtcConfig = {
   ]
 };
 
+// ──────────────── Audio Context Unlock ────────────────
+function unlockAudioContext(fromButton=false) {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume().then(() => {
+      document.getElementById('audioUnlockBanner')?.classList.add('hidden');
+      if (fromButton) showToast("ระบบเสียงพร้อมทำงานแล้ว 🔊", "ok");
+    });
+  }
+}
+
 // ──────────────── Initialize Studio Audio & Media ────────────────
 async function initStudioMedia() {
+  unlockAudioContext();
   try {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    
-    // Audio constraints based on Instrument Mode vs Voice Mode
-    const audioConstraints = isInstrumentMode ? {
-      echoCancellation: false,
-      noiseSuppression: false,
-      autoGainControl: false,
-      channelCount: 2,
+    const audioConstraints = {
+      echoCancellation: !isInstrumentMode,
+      noiseSuppression: !isInstrumentMode,
+      autoGainControl: !isInstrumentMode,
+      channelCount: isInstrumentMode ? 2 : 1,
       sampleRate: 48000,
       latency: 0
-    } : {
-      echoCancellation: true,
-      noiseSuppression: true,
-      autoGainControl: true
     };
+
+    if (selectedAudioInputId) {
+      audioConstraints.deviceId = { exact: selectedAudioInputId };
+    }
 
     localStream = await navigator.mediaDevices.getUserMedia({
       audio: audioConstraints,
@@ -1137,9 +1253,10 @@ async function initStudioMedia() {
 
     audioTrack = localStream.getAudioTracks()[0];
     if (audioTrack) {
-      setupLocalAudioMeter(localStream);
+      setupLocalAudioChain(localStream);
     }
 
+    enumerateAudioHardware();
     startPresenceHeartbeat();
     startSignalPolling();
     startMessagePolling();
@@ -1152,15 +1269,39 @@ async function initStudioMedia() {
   }
 }
 
-function setupLocalAudioMeter(stream) {
+function setupLocalAudioChain(stream) {
   try {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     if (audioCtx.state === 'suspended') audioCtx.resume();
     
-    const source = audioCtx.createMediaStreamSource(stream);
+    if (localSource) {
+      try { localSource.disconnect(); } catch(e) {}
+    }
+
+    localSource = audioCtx.createMediaStreamSource(stream);
+    
+    // Gain Booster Node
+    if (!inputGainNode) {
+      inputGainNode = audioCtx.createGain();
+      inputGainNode.gain.value = inputGainValue;
+    }
+
+    // Direct Monitor Gain Node (for hearing yourself)
+    if (!monitorGainNode) {
+      monitorGainNode = audioCtx.createGain();
+      monitorGainNode.gain.value = isSelfMonitoring ? monitorVolume : 0;
+    }
+
     localAnalyser = audioCtx.createAnalyser();
     localAnalyser.fftSize = 64;
-    source.connect(localAnalyser);
+
+    // Connect chain:
+    // localSource -> inputGainNode -> localAnalyser
+    // inputGainNode -> monitorGainNode -> audioCtx.destination (hear myself)
+    localSource.connect(inputGainNode);
+    inputGainNode.connect(localAnalyser);
+    inputGainNode.connect(monitorGainNode);
+    monitorGainNode.connect(audioCtx.destination);
 
     const dataArray = new Uint8Array(localAnalyser.frequencyBinCount);
     const vuBar = document.getElementById('localVuBar');
@@ -1179,8 +1320,179 @@ function setupLocalAudioMeter(stream) {
       if (vuBar) vuBar.style.width = pct + '%';
     }, 50);
   } catch(e) {
-    console.error("VU meter setup failed:", e);
+    console.error("Audio chain setup error:", e);
   }
+}
+
+// ──────────────── Direct In-Ear Monitor (Hear Yourself) ────────────────
+function toggleSelfMonitor() {
+  unlockAudioContext();
+  isSelfMonitoring = !isSelfMonitoring;
+  
+  if (monitorGainNode) {
+    monitorGainNode.gain.value = isSelfMonitoring ? monitorVolume : 0;
+  }
+
+  const btn = document.getElementById('monitorBtn');
+  const text = document.getElementById('monitorText');
+  const toolBtn = document.getElementById('toolMonitorBtn');
+  const modalBtn = document.getElementById('modalMonitorBtn');
+
+  if (isSelfMonitoring) {
+    if (btn) btn.className = 'px-2.5 py-1.5 rounded-xl bg-purple-600 text-white border border-purple-400 text-xs font-bold flex items-center gap-1.5 transition shadow-sm';
+    if (text) text.textContent = 'ฟังเสียงตัวเอง (ON)';
+    if (toolBtn) { toolBtn.textContent = 'ปิดฟังเสียงตัวเอง'; toolBtn.className = 'px-3 py-1.5 bg-rose-600 text-white font-bold rounded-lg transition text-xs'; }
+    if (modalBtn) { modalBtn.textContent = 'ปิดฟังเสียง'; modalBtn.className = 'px-3 py-1.5 bg-rose-600 text-white font-bold rounded-xl text-xs transition'; }
+    showToast("เปิดระบบฟังเสียงตัวเองในหูฟังแล้ว 🎧 (Direct Monitoring)", "ok");
+  } else {
+    if (btn) btn.className = 'px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-sky-100 text-slate-700 border border-slate-200 text-xs font-bold flex items-center gap-1.5 transition shadow-sm';
+    if (text) text.textContent = 'ฟังเสียงตัวเอง (OFF)';
+    if (toolBtn) { toolBtn.textContent = 'เปิดฟังเสียงตัวเอง'; toolBtn.className = 'px-3 py-1.5 bg-sky-600 text-white font-bold rounded-lg transition text-xs'; }
+    if (modalBtn) { modalBtn.textContent = 'เปิดฟังเสียง'; modalBtn.className = 'px-3 py-1.5 bg-purple-600 text-white font-bold rounded-xl text-xs transition'; }
+    showToast("ปิดระบบฟังเสียงตัวเอง", "ok");
+  }
+}
+
+function setMonitorVolume(vol) {
+  monitorVolume = parseFloat(vol);
+  if (monitorGainNode && isSelfMonitoring) {
+    monitorGainNode.gain.value = monitorVolume;
+  }
+}
+
+function setInputGain(val) {
+  inputGainValue = parseFloat(val);
+  if (inputGainNode) {
+    inputGainNode.gain.value = inputGainValue;
+  }
+  const pct = Math.round(inputGainValue * 100) + '%';
+  document.getElementById('gainDisplay').textContent = pct;
+}
+
+// ──────────────── Enumerate & Change Audio Hardware ────────────────
+async function enumerateAudioHardware() {
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const inSelect = document.getElementById('audioInSelect');
+    const outSelect = document.getElementById('audioOutSelect');
+    
+    if (inSelect) inSelect.innerHTML = '';
+    if (outSelect) outSelect.innerHTML = '';
+
+    devices.forEach((dev, idx) => {
+      if (dev.kind === 'audioinput') {
+        const opt = document.createElement('option');
+        opt.value = dev.deviceId;
+        opt.textContent = dev.label || `ไมโครโฟน / Sound Card ${idx + 1}`;
+        if (selectedAudioInputId === dev.deviceId) opt.selected = true;
+        inSelect?.appendChild(opt);
+      } else if (dev.kind === 'audiooutput') {
+        const opt = document.createElement('option');
+        opt.value = dev.deviceId;
+        opt.textContent = dev.label || `ลำโพง / หูฟัง ${idx + 1}`;
+        if (selectedAudioOutputId === dev.deviceId) opt.selected = true;
+        outSelect?.appendChild(opt);
+      }
+    });
+
+    if (!HTMLMediaElement.prototype.setSinkId) {
+      document.getElementById('audioOutBox')?.classList.add('hidden');
+    }
+  } catch(e) {}
+}
+
+async function changeAudioInputDevice(deviceId) {
+  selectedAudioInputId = deviceId;
+  showToast("กำลังสลับช่องสัญญาณเสียงเข้า...", "ok");
+  await refreshAudioTrack();
+}
+
+async function changeAudioOutputDevice(deviceId) {
+  selectedAudioOutputId = deviceId;
+  try {
+    const audios = document.querySelectorAll('audio');
+    for (let el of audios) {
+      if (typeof el.setSinkId === 'function') {
+        await el.setSinkId(deviceId);
+      }
+    }
+    showToast("สลับช่องสัญญาณเสียงออกเรียบร้อย", "ok");
+  } catch(e) {
+    console.warn("setSinkId failed:", e);
+  }
+}
+
+async function refreshAudioTrack() {
+  if (!localStream) return;
+  try {
+    const audioConstraints = {
+      echoCancellation: !isInstrumentMode,
+      noiseSuppression: !isInstrumentMode,
+      autoGainControl: !isInstrumentMode,
+      channelCount: isInstrumentMode ? 2 : 1,
+      sampleRate: 48000
+    };
+    if (selectedAudioInputId) {
+      audioConstraints.deviceId = { exact: selectedAudioInputId };
+    }
+
+    const newStream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints });
+    const newTrack = newStream.getAudioTracks()[0];
+
+    for (const peerName in peerConnections) {
+      const pc = peerConnections[peerName];
+      const senders = pc.getSenders();
+      const audioSender = senders.find(s => s.track && s.track.kind === 'audio');
+      if (audioSender) {
+        audioSender.replaceTrack(newTrack);
+      }
+    }
+
+    if (audioTrack) audioTrack.stop();
+    audioTrack = newTrack;
+    localStream.removeTrack(localStream.getAudioTracks()[0]);
+    localStream.addTrack(newTrack);
+    setupLocalAudioChain(localStream);
+    showToast("เชื่อมต่ออุปกรณ์เสียงสำเร็จ 🎸", "ok");
+  } catch(err) {
+    console.error("Refresh audio failed:", err);
+    showToast("ไม่สามารถเปิดอุปกรณ์เสียงที่เลือกได้", "error");
+  }
+}
+
+function openAudioSettingsModal() {
+  enumerateAudioHardware();
+  const modal = document.getElementById('audioSettingsModal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+}
+
+function closeAudioSettingsModal() {
+  const modal = document.getElementById('audioSettingsModal');
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+}
+
+// ──────────────── Test Audio Output Chime ────────────────
+function playTestChime() {
+  unlockAudioContext(true);
+  try {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+    osc.frequency.exponentialRampToValueAtTime(659.25, audioCtx.currentTime + 0.15); // E5
+    osc.frequency.exponentialRampToValueAtTime(783.99, audioCtx.currentTime + 0.3); // G5
+
+    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.6);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.6);
+    showToast("กำลังเล่นเสียงทดสอบลำโพง/หูฟัง 🔔", "ok");
+  } catch(e) {}
 }
 
 // ──────────────── Toggle Instrument vs Voice DSP Mode ────────────────
@@ -1189,53 +1501,20 @@ async function toggleAudioMode() {
   const icon = document.getElementById('audioModeIcon');
   const text = document.getElementById('audioModeText');
   const badge = document.getElementById('localAudioStatusBadge');
-  const toolModeText = document.getElementById('toolModeText');
 
   if (isInstrumentMode) {
     if (icon) icon.textContent = '🎸';
     if (text) text.textContent = 'เครื่องดนตรีจริง (Hi-Fi)';
     if (badge) { badge.textContent = 'LIVE HI-FI'; badge.className = 'text-[10px] text-emerald-400 font-mono font-bold'; }
-    if (toolModeText) toolModeText.textContent = 'Hi-Fi เครื่องดนตรี';
     showToast("เปิดโหมดเครื่องดนตรีจริง (ปิด Echo/Noise Filter เพื่อเสียงใสเต็มย่าน)", "ok");
   } else {
     if (icon) icon.textContent = '🎙️';
     if (text) text.textContent = 'ไมค์พูดคุย (Voice)';
     if (badge) { badge.textContent = 'VOICE CHAT'; badge.className = 'text-[10px] text-sky-400 font-mono font-bold'; }
-    if (toolModeText) toolModeText.textContent = 'ไมค์พูดคุย (ตัดเสียงรบกวน)';
     showToast("เปิดโหมดไมค์พูดคุย (เปิดตัวตัดเสียงก้อง)", "ok");
   }
 
-  // Refresh audio stream with new DSP parameters
-  if (localStream) {
-    try {
-      const newAudioConstraints = isInstrumentMode ? {
-        echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 2
-      } : {
-        echoCancellation: true, noiseSuppression: true, autoGainControl: true
-      };
-
-      const newStream = await navigator.mediaDevices.getUserMedia({ audio: newAudioConstraints });
-      const newAudioTrack = newStream.getAudioTracks()[0];
-
-      // Replace audio track across all existing peer connections
-      for (const peerName in peerConnections) {
-        const pc = peerConnections[peerName];
-        const senders = pc.getSenders();
-        const audioSender = senders.find(s => s.track && s.track.kind === 'audio');
-        if (audioSender) {
-          audioSender.replaceTrack(newAudioTrack);
-        }
-      }
-
-      if (audioTrack) audioTrack.stop();
-      audioTrack = newAudioTrack;
-      localStream.removeTrack(localStream.getAudioTracks()[0]);
-      localStream.addTrack(newAudioTrack);
-      setupLocalAudioMeter(localStream);
-    } catch(err) {
-      console.warn("Could not swap audio track constraints:", err);
-    }
-  }
+  await refreshAudioTrack();
 }
 
 // ──────────────── Toggle Audio / Video Tracks ────────────────
@@ -1287,7 +1566,6 @@ async function toggleVideoTrack() {
       if (myCamStatus) { myCamStatus.textContent = '📷 เปิดกล้อง'; myCamStatus.className = 'p-1 rounded bg-sky-100 text-sky-700 text-[10px] font-bold'; }
       if (camBtnText) camBtnText.textContent = 'ปิดกล้อง';
 
-      // Add video track to existing peers
       for (const peerName in peerConnections) {
         const pc = peerConnections[peerName];
         pc.addTrack(videoTrack, localStream);
@@ -1402,7 +1680,6 @@ async function createOfferForPeer(peerName) {
     offerToReceiveVideo: true
   });
   
-  // Enhance Opus SDP for maximum audio fidelity (Stereo, 256kbps)
   let sdp = offer.sdp;
   sdp = sdp.replace(/a=fmtp:(\d+) (.*)/g, (match, pt, params) => {
     if (params.includes('minptime=') || params.includes('useinbandfec=')) {
@@ -1433,7 +1710,7 @@ function renderPeerTile(peerName, stream) {
     tile.innerHTML = `
       <div class="relative w-full flex-1 min-h-[160px] bg-gradient-to-br from-sky-900 to-slate-900 rounded-xl overflow-hidden flex items-center justify-center">
         <video id="video_${tileId}" autoplay playsinline class="w-full h-full object-cover hidden"></video>
-        <audio id="audio_${tileId}" autoplay></audio>
+        <audio id="audio_${tileId}" autoplay playsinline></audio>
         
         <div id="avatar_${tileId}" class="flex flex-col items-center justify-center p-4 text-center">
           <div class="h-20 w-20 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-3xl mb-2 shadow-inner">
@@ -1443,7 +1720,6 @@ function renderPeerTile(peerName, stream) {
           <div class="text-xs text-sky-200 font-semibold" id="role_${tileId}">Band Musician</div>
         </div>
 
-        <!-- VU Meter Bar for peer -->
         <div class="absolute bottom-2 left-2 right-2 flex items-center justify-between bg-black/60 backdrop-blur-md px-2.5 py-1.5 rounded-lg border border-white/15 text-xs text-white">
           <div class="flex items-center gap-1.5">
             <span>🔊</span>
@@ -1480,6 +1756,12 @@ function renderPeerTile(peerName, stream) {
 
   if (audioEl) {
     audioEl.srcObject = stream;
+    audioEl.play().catch(e => {
+      document.getElementById('audioUnlockBanner')?.classList.remove('hidden');
+    });
+    if (selectedAudioOutputId && typeof audioEl.setSinkId === 'function') {
+      audioEl.setSinkId(selectedAudioOutputId).catch(e => {});
+    }
     setupPeerAudioMeter(stream, 'vu_' + tileId);
   }
 }
@@ -1607,7 +1889,6 @@ function updateMembersList(members) {
     `).join('');
   }
 
-  // Connect to peers who are online
   members.forEach(m => {
     if (m.name !== MY_NAME && !peerConnections[m.name]) {
       if (MY_NAME > m.name) {
@@ -1655,7 +1936,6 @@ function appendChatMessage(msg, container) {
     msgDiv.innerHTML = `<span class="px-2.5 py-1 rounded-full bg-sky-50 border border-sky-100 text-[10px] text-sky-700 font-mono">${msg.body}</span>`;
   } else {
     let contentHtml = escapeHtml(msg.body);
-    // Highlight chord annotations e.g. [C], [Am], [G7]
     contentHtml = contentHtml.replace(/\[([A-G][b#]?[m]?[0-9]?[a-zA-Z]*)\]/g, '<span class="px-1.5 py-0.5 rounded bg-sky-100 text-sky-800 font-mono font-bold text-xs border border-sky-200">$1</span>');
 
     let fileHtml = '';
@@ -1731,6 +2011,7 @@ async function handleChatFileUpload(input) {
 
 // ──────────────── Studio Metronome & Tap Tempo ────────────────
 function toggleMetronome() {
+  unlockAudioContext(true);
   metronomePlaying = !metronomePlaying;
   const btn = document.getElementById('metronomeBtn');
   const dot = document.getElementById('metroIndicator');
@@ -1809,10 +2090,8 @@ function tapTempo() {
 // ──────────────── Tuner Reference Notes ────────────────
 function playNoteFrequency(freq, name) {
   stopAllTunerTones();
+  unlockAudioContext(true);
   try {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-
     tunerOscillator = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     tunerOscillator.type = 'triangle';
@@ -1843,8 +2122,8 @@ function stopAllTunerTones() {
 
 // ──────────────── Live Video & Audio Recording Studio ────────────────
 async function toggleRecording() {
+  unlockAudioContext(true);
   if (mediaRecorder && mediaRecorder.state === 'recording') {
-    // Stop recording
     mediaRecorder.stop();
     clearInterval(recordTimerInterval);
     document.getElementById('recordBtn').classList.remove('bg-rose-500', 'text-white');
@@ -1855,18 +2134,14 @@ async function toggleRecording() {
     return;
   }
 
-  // Start recording mixed studio output
   try {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const dest = audioCtx.createMediaStreamDestination();
 
-    // Mix local audio
     if (localStream && localStream.getAudioTracks().length > 0) {
-      const localSource = audioCtx.createMediaStreamSource(localStream);
-      localSource.connect(dest);
+      const src = audioCtx.createMediaStreamSource(localStream);
+      src.connect(dest);
     }
 
-    // Mix remote peers audio
     for (const peerName in remoteStreams) {
       const stream = remoteStreams[peerName];
       if (stream.getAudioTracks().length > 0) {
@@ -1875,7 +2150,6 @@ async function toggleRecording() {
       }
     }
 
-    // Mix local video track if present
     const tracks = [...dest.stream.getAudioTracks()];
     if (localStream && localStream.getVideoTracks().length > 0) {
       tracks.push(localStream.getVideoTracks()[0]);
@@ -1884,7 +2158,6 @@ async function toggleRecording() {
     const mixedStream = new MediaStream(tracks);
     recordedChunks = [];
     
-    // Choose optimal mimeType
     let mimeType = 'video/webm;codecs=vp9,opus';
     if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/webm';
     if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'audio/webm';
@@ -1978,7 +2251,6 @@ function showToast(msg, type='ok') {
   setTimeout(() => toast.remove(), 3500);
 }
 
-// Auto start media on page load
 window.addEventListener('DOMContentLoaded', () => {
   initStudioMedia();
 });
@@ -2199,7 +2471,6 @@ def api_send_signal(code):
         VALUES (?,?,?,?,?,?)
     """, (code, me, recipient, sig_type, data, now))
     
-    # Cleanup signals older than 60s
     db.execute("DELETE FROM webrtc_signals WHERE created_at < ?", (now - 60,))
     db.commit()
     return jsonify(ok=True)
@@ -2307,7 +2578,6 @@ def api_messages(code):
         db.commit()
         return jsonify(ok=True)
 
-    # GET: fetch messages
     try:
         after = int(request.args.get("after", 0))
     except ValueError:
@@ -2342,7 +2612,7 @@ init_db()
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     print("\n" + "="*60)
-    print(" 🎸 Music Room — Live Jam Studio (Bright Sky Blue) กำลังทำงานบนเซิร์ฟเวอร์...")
+    print(" 🎸 Music Room — Live Jam Studio กำลังทำงานบนเซิร์ฟเวอร์...")
     print(f" 🌐 สำหรับเครื่องนี้: http://127.0.0.1:{port}")
     ips = get_local_ips()
     for item in ips:
