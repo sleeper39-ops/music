@@ -1,5 +1,6 @@
 """
 Music Room — ห้องซ้อมดนตรีออนไลน์ & Live Jamming Studio (Flask Single File)
+- ธีมสีฟ้าสดใสโทนสว่าง (Bright Sky & Ocean Blue Light Theme)
 - ซ้อมดนตรีสด & แจมเพลงออนไลน์แบบ Ultra-Low Latency (WebRTC Peer-to-Peer)
 - รองรับทั้งการต่อ "เครื่องดนตรีจริง" (กีตาร์ เบส คีย์บอร์ด กลองไฟฟ้า ผ่าน Audio Interface / iPhone / iPad)
   และโหมดพูดคุยผ่านไมค์ พร้อมปิด DSP Echo Cancellation/Noise Filter ในโหมดดนตรี เพื่อเสียงที่ใส คมชัด ไม่โดนตัดทอน
@@ -22,7 +23,7 @@ from flask import (Flask, request, session, redirect, url_for, jsonify,
                    render_template_string, g, flash, abort)
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "music-room-studio-jam-key-2026")
+app.secret_key = os.environ.get("SECRET_KEY", "music-room-sky-blue-key-2026")
 app.config['MAX_CONTENT_LENGTH'] = 64 * 1024 * 1024  # รองรับไฟล์ขนาดสูงสุด 64 MB
 DB_PATH = os.environ.get("CHAT_DB", "chat.db")
 
@@ -152,7 +153,6 @@ def init_db():
         CREATE INDEX IF NOT EXISTS idx_signals ON webrtc_signals(room_code, recipient, id);
     """)
 
-    # Check & migrate existing columns
     cur.execute("PRAGMA table_info(rooms)")
     room_cols = [row[1] for row in cur.fetchall()]
     if "bpm" not in room_cols:
@@ -227,38 +227,38 @@ def unlock_room(code):
     session["unlocked_rooms"] = unlocked
 
 
-# ───────────────────────────── HTML Templates ─────────────────────────────
+# ───────────────────────────── HTML Templates (Bright Sky Blue Theme) ─────────────────────────────
 BASE = r"""<!doctype html>
-<html lang="th" class="dark">
+<html lang="th">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>{{ title or 'Music Room — ห้องซ้อมดนตรีออนไลน์ & Live Jamming Studio' }}</title>
+<title>{{ title or 'Music Room — ห้องซ้อมดนตรีออนไลน์ & Live Jam Studio' }}</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Prompt:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
   tailwind.config = {
-    darkMode: 'class',
     theme: {
       extend: {
         fontFamily: {
-          sans: ['"Prompt"', '"Outfit"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-          outfit: ['"Outfit"', 'sans-serif'],
+          sans: ['"IBM Plex Sans Thai"', '"Plus Jakarta Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+          display: ['"Plus Jakarta Sans"', '"IBM Plex Sans Thai"', 'sans-serif'],
           mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace']
         },
         colors: {
-          studio: {
-            950: '#090b10',
-            900: '#0f141f',
-            850: '#151b2a',
-            800: '#1b2337',
-            700: '#27334d',
-            accent: '#8b5cf6',
-            cyan: '#06b6d4',
-            neon: '#10b981',
-            glow: '#ec4899'
+          brand: {
+            50: '#f0f9ff',
+            100: '#e0f2fe',
+            200: '#bae6fd',
+            300: '#7dd3fc',
+            400: '#38bdf8',
+            500: '#0ea5e9',
+            600: '#0284c7',
+            700: '#0369a1',
+            800: '#075985',
+            900: '#0c4a6e',
           }
         }
       }
@@ -267,81 +267,79 @@ BASE = r"""<!doctype html>
 </script>
 <style>
   ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-thumb { background: #334155; border-radius: 999px; }
-  ::-webkit-scrollbar-thumb:hover { background: #475569; }
+  ::-webkit-scrollbar-thumb { background: #bae6fd; border-radius: 999px; }
+  ::-webkit-scrollbar-thumb:hover { background: #7dd3fc; }
   ::-webkit-scrollbar-track { background: transparent; }
 
   @keyframes pulseGlow {
-    0%, 100% { opacity: 1; filter: drop-shadow(0 0 10px rgba(139, 92, 246, 0.6)); }
-    50% { opacity: 0.7; filter: drop-shadow(0 0 4px rgba(139, 92, 246, 0.2)); }
+    0%, 100% { opacity: 1; filter: drop-shadow(0 0 12px rgba(14, 165, 233, 0.45)); }
+    50% { opacity: 0.8; filter: drop-shadow(0 0 4px rgba(14, 165, 233, 0.2)); }
   }
   .pulse-glow { animation: pulseGlow 2.5s infinite ease-in-out; }
 
   @keyframes recBlink {
     0%, 100% { opacity: 1; }
-    50% { opacity: 0.2; }
+    50% { opacity: 0.25; }
   }
   .rec-blink { animation: recBlink 1.2s infinite ease-in-out; }
 
-  .glass-studio {
-    background: rgba(15, 20, 31, 0.75);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+  .glass-light {
+    background: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(186, 230, 253, 0.7);
   }
   .glass-card {
-    background: rgba(21, 27, 42, 0.85);
+    background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(224, 242, 254, 0.9);
   }
-  .neon-border-cyan { border-color: rgba(6, 182, 212, 0.4); box-shadow: 0 0 15px -3px rgba(6, 182, 212, 0.2); }
-  .neon-border-purple { border-color: rgba(139, 92, 246, 0.4); box-shadow: 0 0 15px -3px rgba(139, 92, 246, 0.2); }
-  .neon-border-emerald { border-color: rgba(16, 185, 129, 0.4); box-shadow: 0 0 15px -3px rgba(16, 185, 129, 0.2); }
-
-  /* Audio Meter styles */
+  .glow-sky {
+    box-shadow: 0 10px 30px -10px rgba(14, 165, 233, 0.35);
+  }
   .vu-bar {
     transition: height 0.05s ease-out, width 0.05s ease-out;
   }
 </style>
 </head>
-<body class="bg-studio-950 text-slate-100 font-sans min-h-screen selection:bg-purple-600 selection:text-white antialiased">
+<body class="bg-gradient-to-br from-sky-50 via-blue-50/60 to-cyan-50 text-slate-800 font-sans min-h-screen selection:bg-sky-500 selection:text-white antialiased">
 {% with msgs = get_flashed_messages(with_categories=true) %}
   {% if msgs %}
   <div id="toast" class="fixed top-5 left-1/2 -translate-x-1/2 z-50 space-y-2 max-w-[90vw] sm:max-w-md">
     {% for cat, m in msgs %}
-    <div class="px-5 py-3.5 rounded-2xl shadow-2xl text-sm font-medium flex items-center gap-3 animate-bounce
-      {{ 'bg-rose-600/95 text-white border border-rose-400/40' if cat=='error' else 'bg-purple-600/95 text-white border border-purple-400/40 shadow-purple-500/25' }} backdrop-blur-xl">
+    <div class="px-5 py-3.5 rounded-2xl shadow-xl text-sm font-semibold flex items-center gap-3 animate-bounce
+      {{ 'bg-rose-500 text-white shadow-rose-500/30' if cat=='error' else 'bg-sky-600 text-white shadow-sky-500/30' }}">
       <span class="text-lg">{{ '⚠️' if cat=='error' else '✨' }}</span>
       <span class="flex-1">{{ m }}</span>
     </div>
     {% endfor %}
   </div>
-  <script>setTimeout(()=>document.getElementById('toast')?.remove(), 4500)</script>
+  <script>setTimeout(()=>document.getElementById('toast')?.remove(), 4000)</script>
   {% endif %}
 {% endwith %}
 
 %%BODY%%
 
 <!-- Global QR Code Modal -->
-<div id="qrModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4">
-  <div class="glass-card rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-2xl border border-purple-500/30 text-center relative">
-    <button onclick="closeQrModal()" class="absolute top-4 right-4 h-8 w-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition">&times;</button>
-    <div class="h-14 w-14 rounded-2xl bg-purple-500/20 text-purple-400 flex items-center justify-center mx-auto mb-3 text-2xl border border-purple-500/30">
+<div id="qrModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
+  <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-2xl border border-sky-100 text-center relative">
+    <button onclick="closeQrModal()" class="absolute top-4 right-4 h-8 w-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition">&times;</button>
+    <div class="h-14 w-14 rounded-2xl bg-sky-100 text-sky-600 flex items-center justify-center mx-auto mb-3 text-2xl border border-sky-200">
       🎸
     </div>
-    <h3 class="text-xl font-bold text-white font-outfit" id="qrModalTitle">สแกนต่อมือถือ / iPad</h3>
-    <p class="text-xs text-slate-400 mt-1 mb-4">เปิดกล้อง iPhone, iPad หรือ Android เพื่อเข้าร่วมห้องซ้อมดนตรีสด</p>
+    <h3 class="text-xl font-bold text-slate-800 font-display" id="qrModalTitle">สแกนต่อมือถือ / iPad</h3>
+    <p class="text-xs text-slate-500 mt-1 mb-4">เปิดกล้อง iPhone, iPad หรือ Android เพื่อเข้าร่วมห้องซ้อมดนตรีสด</p>
     
-    <div class="bg-white p-4 rounded-2xl inline-block mb-4 shadow-xl">
+    <div class="bg-sky-50 p-4 rounded-2xl inline-block border border-sky-100 mb-4 shadow-inner">
       <div id="qrcodeCanvas" class="flex justify-center"></div>
     </div>
 
     <div class="space-y-2 text-left">
-      <label class="text-xs font-semibold text-slate-400">URL สำหรับเปิดในเบราว์เซอร์:</label>
-      <div class="flex items-center gap-1.5 bg-studio-900 p-2 rounded-xl border border-slate-700">
-        <input id="qrUrlInput" readonly class="text-xs text-cyan-300 font-mono bg-transparent w-full outline-none select-all">
-        <button onclick="copyQrUrl()" id="copyQrBtn" class="shrink-0 px-3 py-1 text-xs font-semibold bg-purple-600 hover:bg-purple-500 text-white rounded-lg transition">คัดลอก</button>
+      <label class="text-xs font-semibold text-slate-500">URL สำหรับเปิดในเบราว์เซอร์:</label>
+      <div class="flex items-center gap-1.5 bg-slate-50 p-2 rounded-xl border border-slate-200">
+        <input id="qrUrlInput" readonly class="text-xs text-sky-700 font-mono bg-transparent w-full outline-none select-all">
+        <button onclick="copyQrUrl()" id="copyQrBtn" class="shrink-0 px-3 py-1 text-xs font-semibold bg-sky-600 hover:bg-sky-700 text-white rounded-lg transition">คัดลอก</button>
       </div>
     </div>
   </div>
@@ -355,7 +353,7 @@ function showQrModal(url, title) {
   if(title) document.getElementById('qrModalTitle').textContent = title;
   canvasBox.innerHTML = '';
   urlInput.value = url;
-  new QRCode(canvasBox, { text: url, width: 180, height: 180, colorDark : "#0f172a", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.M });
+  new QRCode(canvasBox, { text: url, width: 180, height: 180, colorDark : "#0369a1", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.M });
   modal.classList.remove('hidden'); modal.classList.add('flex');
 }
 function closeQrModal() { const m = document.getElementById('qrModal'); m.classList.add('hidden'); m.classList.remove('flex'); }
@@ -366,8 +364,8 @@ async function copyQrUrl() {
   try {
     await navigator.clipboard.writeText(urlInput.value);
     btn.textContent = 'คัดลอกแล้ว!';
-    btn.classList.replace('bg-purple-600', 'bg-emerald-600');
-    setTimeout(() => { btn.textContent = 'คัดลอก'; btn.classList.replace('bg-emerald-600', 'bg-purple-600'); }, 1500);
+    btn.classList.replace('bg-sky-600', 'bg-emerald-600');
+    setTimeout(() => { btn.textContent = 'คัดลอก'; btn.classList.replace('bg-emerald-600', 'bg-sky-600'); }, 1500);
   } catch(e) { urlInput.select(); document.execCommand('copy'); }
 }
 </script>
@@ -375,53 +373,53 @@ async function copyQrUrl() {
 </html>"""
 
 
-# ───────────────────────────── Login / Profile ─────────────────────────────
+# ───────────────────────────── Login Page ─────────────────────────────
 LOGIN = r"""
-<div class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-studio-950 via-studio-900 to-purple-950/40 relative overflow-hidden">
-  <!-- Glowing Background Orbs -->
-  <div class="absolute -top-40 -left-40 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl pointer-events-none"></div>
-  <div class="absolute -bottom-40 -right-40 w-96 h-96 bg-cyan-600/20 rounded-full blur-3xl pointer-events-none"></div>
+<div class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-sky-400 via-blue-500 to-cyan-600 relative overflow-hidden">
+  <!-- Glowing Sky Orbs -->
+  <div class="absolute -top-32 -left-32 w-80 h-80 bg-white/20 rounded-full blur-2xl pointer-events-none"></div>
+  <div class="absolute -bottom-32 -right-32 w-80 h-80 bg-cyan-300/25 rounded-full blur-2xl pointer-events-none"></div>
 
-  <div class="w-full max-w-md glass-studio rounded-3xl shadow-2xl p-8 border border-white/10 relative z-10">
+  <div class="w-full max-w-md bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-white/40 relative z-10">
     <div class="flex flex-col items-center text-center mb-6">
-      <div class="h-20 w-20 rounded-3xl bg-gradient-to-tr from-purple-600 via-indigo-500 to-cyan-400 p-0.5 shadow-xl shadow-purple-500/25 mb-4 pulse-glow">
-        <div class="w-full h-full bg-studio-950 rounded-[22px] flex items-center justify-center text-3xl">
+      <div class="h-20 w-20 rounded-3xl bg-gradient-to-tr from-sky-400 via-blue-500 to-cyan-400 p-0.5 shadow-xl shadow-sky-500/30 mb-4 pulse-glow">
+        <div class="w-full h-full bg-white rounded-[22px] flex items-center justify-center text-3xl">
           🎸
         </div>
       </div>
-      <h1 class="text-3xl font-extrabold text-white tracking-tight font-outfit">Music Room</h1>
-      <p class="text-purple-400 font-medium text-sm mt-1">ห้องซ้อมดนตรีออนไลน์ & Live Jam Studio</p>
-      <div class="flex items-center gap-2 mt-2 px-3 py-1 bg-purple-500/10 rounded-full border border-purple-500/20 text-[11px] text-purple-300">
-        <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+      <h1 class="text-3xl font-extrabold text-slate-800 tracking-tight font-display">Music Room</h1>
+      <p class="text-sky-700 font-semibold text-sm mt-1">ห้องซ้อมดนตรีออนไลน์ & Live Jam Studio</p>
+      <div class="flex items-center gap-2 mt-2.5 px-3 py-1 bg-sky-50 rounded-full border border-sky-200 text-xs text-sky-700 font-medium">
+        <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
         <span>Ultra-Low Latency · Instrument / Mic Studio</span>
       </div>
     </div>
 
-    <!-- Network IP Info -->
-    <div class="bg-studio-900/90 border border-slate-800 rounded-2xl p-3.5 mb-6 text-xs text-slate-300 space-y-2">
-      <div class="flex items-center justify-between font-semibold text-cyan-400">
+    <!-- Network Info -->
+    <div class="bg-sky-50/80 border border-sky-200 rounded-2xl p-3.5 mb-6 text-xs text-slate-700 space-y-2">
+      <div class="flex items-center justify-between font-semibold text-sky-900">
         <span class="flex items-center gap-1.5">
-          <span class="h-2 w-2 rounded-full bg-cyan-400"></span>
+          <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
           ที่อยู่ IP สำหรับเชื่อมต่อห้องซ้อม
         </span>
-        <button type="button" onclick="showQrModal('{{ current_url }}', 'สแกนเข้าสู่ห้องซ้อมผ่านมือถือ/iPad')" class="text-purple-400 hover:text-purple-300 font-bold underline flex items-center gap-1">
+        <button type="button" onclick="showQrModal('{{ current_url }}', 'สแกนเข้าสู่ห้องซ้อมผ่านมือถือ/iPad')" class="text-sky-600 hover:text-sky-800 font-bold underline flex items-center gap-1">
           📱 QR มือถือ
         </button>
       </div>
       {% for item in net_ips %}
-      <div class="flex justify-between items-center font-mono py-1 border-b border-slate-800/80 last:border-0 text-[11px]">
-        <span class="font-medium text-slate-400">[{{ item.type }}]</span>
-        <span class="text-cyan-300 font-bold">http://{{ item.ip }}:{{ port }}</span>
+      <div class="flex justify-between items-center font-mono py-1 border-b border-sky-100 last:border-0 text-[11px]">
+        <span class="font-medium text-slate-500">[{{ item.type }}]</span>
+        <span class="text-sky-800 font-bold">http://{{ item.ip }}:{{ port }}</span>
       </div>
       {% endfor %}
     </div>
 
     <form method="post" action="{{ url_for('login') }}" class="space-y-4">
       <div>
-        <label class="block text-sm font-semibold text-slate-300 mb-1.5">ชื่อของคุณ / ชื่อนักดนตรี</label>
+        <label class="block text-sm font-semibold text-slate-700 mb-1.5">ชื่อของคุณ / ชื่อนักดนตรี</label>
         <div class="relative">
           <input name="name" required maxlength="{{ max_name }}" autofocus placeholder="เช่น เจ กีตาร์, มาร์ค กลอง, บีม ร้องนำ"
-            class="w-full rounded-2xl border border-slate-700 bg-studio-900/80 px-4 py-3.5 pl-11 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition font-medium">
+            class="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3.5 pl-11 text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-sky-100 focus:border-sky-500 transition font-medium">
           <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 text-lg">
             🎵
           </div>
@@ -429,8 +427,8 @@ LOGIN = r"""
       </div>
 
       <div>
-        <label class="block text-sm font-semibold text-slate-300 mb-1.5">ตำแหน่งเครื่องดนตรีหลัก</label>
-        <select name="role" class="w-full rounded-2xl border border-slate-700 bg-studio-900/80 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition font-medium">
+        <label class="block text-sm font-semibold text-slate-700 mb-1.5">ตำแหน่งเครื่องดนตรีหลัก</label>
+        <select name="role" class="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-slate-800 focus:bg-white focus:outline-none focus:ring-4 focus:ring-sky-100 focus:border-sky-500 transition font-medium">
           <option value="🎸 Lead Guitar">🎸 Lead Guitar (กีตาร์ลีด)</option>
           <option value="🎸 Rhythm Guitar">🎸 Rhythm Guitar (กีตาร์คอร์ด)</option>
           <option value="🎸 Bass">🎸 Bass (เบส)</option>
@@ -443,7 +441,7 @@ LOGIN = r"""
         </select>
       </div>
 
-      <button class="w-full rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white font-bold py-3.5 shadow-lg shadow-purple-600/30 active:scale-[.99] transition duration-150 flex items-center justify-center gap-2 mt-2">
+      <button class="w-full rounded-2xl bg-gradient-to-r from-sky-500 via-blue-600 to-cyan-600 hover:from-sky-600 hover:to-blue-700 text-white font-bold py-3.5 shadow-lg shadow-sky-500/30 hover:shadow-xl active:scale-[.99] transition duration-150 flex items-center justify-center gap-2 mt-2">
         <span>เข้าสู่สตูดิโอห้องซ้อม</span>
         <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
       </button>
@@ -455,39 +453,37 @@ LOGIN = r"""
 
 # ───────────────────────────── Lobby Page ─────────────────────────────
 LOBBY = r"""
-<div class="min-h-screen bg-studio-950 text-slate-100">
-  <!-- Studio Top Navbar -->
-  <header class="glass-studio sticky top-0 z-30 border-b border-slate-800/80">
+<div class="min-h-screen bg-gradient-to-b from-sky-100/70 via-blue-50/40 to-slate-100 text-slate-800">
+  <!-- Top Navbar -->
+  <header class="bg-white/90 backdrop-blur-md border-b border-sky-100 sticky top-0 z-30 shadow-sm">
     <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3">
       <div class="flex items-center gap-3">
-        <div class="h-10 w-10 rounded-2xl bg-gradient-to-tr from-purple-600 to-cyan-400 p-0.5 shadow-md shadow-purple-500/20">
-          <div class="w-full h-full bg-studio-950 rounded-[14px] flex items-center justify-center text-xl">
-            🎸
-          </div>
+        <div class="h-10 w-10 rounded-2xl bg-gradient-to-tr from-sky-400 to-blue-600 flex items-center justify-center shadow-md shadow-sky-500/20 text-white text-xl">
+          🎸
         </div>
         <div>
-          <span class="text-xl font-extrabold tracking-tight font-outfit text-white">Music Room</span>
-          <span class="hidden sm:inline-block ml-2 px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 text-[10px] font-bold uppercase tracking-wider">Live Jam Studio</span>
+          <span class="text-xl font-bold bg-gradient-to-r from-sky-600 to-blue-700 bg-clip-text text-transparent font-display">Music Room</span>
+          <span class="hidden sm:inline-block ml-2 px-2 py-0.5 rounded-md bg-sky-100 text-sky-700 text-[11px] font-bold uppercase tracking-wider">Live Jam Studio</span>
         </div>
       </div>
 
       <div class="flex items-center gap-2 sm:gap-3">
         <button onclick="showQrModal('{{ current_url }}', 'สแกน QR เข้าระบบด้วยมือถือ/iPad')"
-          class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-studio-900 hover:bg-studio-800 text-cyan-300 border border-slate-700 text-xs font-semibold transition" title="เปิด QR Code สำหรับมือถือ">
+          class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 text-xs font-semibold transition" title="เปิด QR Code สำหรับมือถือ">
           <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
           <span class="hidden sm:inline">QR มือถือ / iPad</span>
         </button>
 
         <!-- User Role Pill -->
-        <div class="flex items-center gap-2 bg-studio-900 rounded-full pl-2 pr-3 py-1 border border-slate-700 shadow-inner">
+        <div class="flex items-center gap-2 bg-white rounded-full pl-2 pr-3 py-1 border border-slate-200 shadow-sm">
           <span class="text-base">{{ my_role.split(' ')[0] if my_role else '🎵' }}</span>
           <div class="text-left">
-            <div class="text-xs font-bold text-white leading-none">{{ me }}</div>
-            <div class="text-[10px] text-purple-400 leading-none mt-0.5">{{ my_role.split(' ')[1] if my_role and ' ' in my_role else 'Musician' }}</div>
+            <div class="text-xs font-bold text-slate-800 leading-none">{{ me }}</div>
+            <div class="text-[10px] text-sky-600 leading-none mt-0.5">{{ my_role.split(' ')[1] if my_role and ' ' in my_role else 'Musician' }}</div>
           </div>
         </div>
         
-        <a href="{{ url_for('logout') }}" class="p-2 text-slate-400 hover:text-rose-400 transition" title="ออกจากระบบ">
+        <a href="{{ url_for('logout') }}" class="p-2 text-slate-400 hover:text-rose-600 transition" title="ออกจากระบบ">
           <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
         </a>
       </div>
@@ -496,28 +492,28 @@ LOBBY = r"""
 
   <main class="max-w-6xl mx-auto px-4 py-6 sm:py-8 space-y-8">
     <!-- Hero Banner -->
-    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-purple-950 via-studio-900 to-cyan-950 p-6 sm:p-8 border border-purple-500/20 shadow-2xl">
+    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-sky-600 via-blue-600 to-cyan-600 p-6 sm:p-8 text-white shadow-xl glow-sky">
       <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/20 border border-purple-500/30 text-xs font-semibold text-purple-300 mb-3">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-semibold text-sky-100 mb-3">
             <span class="h-2 w-2 rounded-full bg-emerald-400 animate-ping"></span>
             Real-time WebRTC Audio Engine พร้อมใช้งาน
           </div>
-          <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight font-outfit">สตูดิโอห้องซ้อมดนตรีออนไลน์ 🎸</h2>
-          <p class="text-slate-300 text-sm mt-1 max-w-xl">
+          <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight font-display">สตูดิโอห้องซ้อมดนตรีออนไลน์ 🎸</h2>
+          <p class="text-sky-100 text-sm mt-1 max-w-xl">
             เสียบเครื่องดนตรีจริง (Audio Interface / iPhone / iPad) หรือใช้ไมค์ เล่นสดพร้อมกันแบบดีเลย์ต่ำสุด เปิดกล้อง และอัดเสียง/วิดีโอได้ทันที
           </p>
         </div>
 
-        <div class="glass-card rounded-2xl p-4 sm:p-5 shrink-0 space-y-2 text-xs border border-cyan-500/20">
-          <div class="font-bold flex items-center justify-between text-cyan-300">
+        <div class="bg-white/15 backdrop-blur-md border border-white/20 rounded-2xl p-4 sm:p-5 shrink-0 space-y-2 text-xs">
+          <div class="font-bold flex items-center justify-between text-sky-100">
             <span>🌐 ที่อยู่เซิร์ฟเวอร์สำหรับต่อพ่วง</span>
           </div>
           <div class="space-y-1 font-mono text-[11px]">
             {% for item in net_ips %}
-            <div class="flex items-center justify-between gap-3 bg-studio-950/80 px-3 py-1.5 rounded-lg border border-slate-800">
-              <span class="text-slate-400">[{{ item.type }}]</span>
-              <span class="font-bold text-cyan-300">http://{{ item.ip }}:{{ port }}</span>
+            <div class="flex items-center justify-between gap-3 bg-black/20 px-3 py-1 rounded-lg">
+              <span class="text-sky-200">[{{ item.type }}]</span>
+              <span class="font-bold text-white">http://{{ item.ip }}:{{ port }}</span>
             </div>
             {% endfor %}
           </div>
@@ -528,23 +524,23 @@ LOBBY = r"""
     <!-- Actions Grid: Join vs Create -->
     <div class="grid md:grid-cols-2 gap-6">
       <!-- Join Box -->
-      <div class="glass-card rounded-3xl p-6 sm:p-7 shadow-xl border border-slate-800 flex flex-col justify-between hover:border-cyan-500/40 transition">
+      <div class="glass-card rounded-3xl p-6 sm:p-7 shadow-sm border border-sky-100 flex flex-col justify-between hover:shadow-md transition">
         <div>
           <div class="flex items-center gap-3 mb-4">
-            <div class="h-12 w-12 rounded-2xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-2xl border border-cyan-500/30">
+            <div class="h-12 w-12 rounded-2xl bg-sky-100 text-sky-600 flex items-center justify-center text-2xl border border-sky-200">
               🚪
             </div>
             <div>
-              <h3 class="font-bold text-lg text-white">เข้าห้องซ้อมด้วยรหัส 4 หลัก</h3>
-              <p class="text-xs text-slate-400">กรอกรหัสตัวเลข 4 หลักที่เพื่อนร่วมวงส่งให้</p>
+              <h3 class="font-bold text-lg text-slate-800">เข้าห้องซ้อมด้วยรหัส 4 หลัก</h3>
+              <p class="text-xs text-slate-500">กรอกรหัสตัวเลข 4 หลักที่เพื่อนร่วมวงส่งให้</p>
             </div>
           </div>
 
           <form id="joinForm" method="post" action="{{ url_for('join') }}" class="mt-4">
             <div class="flex gap-2">
               <input type="text" name="code" id="joinCodeInput" maxlength="4" pattern="\d{4}" inputmode="numeric" required placeholder="เช่น 1024"
-                class="w-full bg-studio-900 border border-slate-700 rounded-2xl px-4 py-3.5 text-center text-2xl font-mono tracking-widest font-extrabold text-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition">
-              <button type="submit" class="px-6 rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold transition flex items-center gap-2 shrink-0 shadow-lg shadow-cyan-500/20">
+                class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-center text-2xl font-mono tracking-widest font-extrabold text-sky-700 focus:bg-white focus:outline-none focus:ring-4 focus:ring-sky-100 focus:border-sky-500 transition">
+              <button type="submit" class="px-6 rounded-2xl bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white font-bold transition flex items-center gap-2 shrink-0 shadow-lg shadow-sky-500/25">
                 <span>เข้าห้อง</span>
                 <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
               </button>
@@ -552,35 +548,35 @@ LOBBY = r"""
           </form>
         </div>
 
-        <div class="mt-4 pt-4 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+        <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
           <span>รองรับการเข้าพร้อมกันหลายคน</span>
-          <span class="text-cyan-400 font-semibold">WebRTC Direct P2P</span>
+          <span class="text-sky-600 font-semibold">WebRTC Direct P2P</span>
         </div>
       </div>
 
       <!-- Create Room Box -->
-      <div class="glass-card rounded-3xl p-6 sm:p-7 shadow-xl border border-slate-800 flex flex-col justify-between hover:border-purple-500/40 transition">
+      <div class="glass-card rounded-3xl p-6 sm:p-7 shadow-sm border border-sky-100 flex flex-col justify-between hover:shadow-md transition">
         <div>
           <div class="flex items-center gap-3 mb-4">
-            <div class="h-12 w-12 rounded-2xl bg-purple-500/20 text-purple-400 flex items-center justify-center text-2xl border border-purple-500/30">
+            <div class="h-12 w-12 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center text-2xl border border-blue-200">
               🎙️
             </div>
             <div>
-              <h3 class="font-bold text-lg text-white">สร้างห้องซ้อมดนตรีใหม่</h3>
-              <p class="text-xs text-slate-400">กำหนดชื่อวง จังหวะ BPM และสไตล์เพลง</p>
+              <h3 class="font-bold text-lg text-slate-800">สร้างห้องซ้อมดนตรีใหม่</h3>
+              <p class="text-xs text-slate-500">กำหนดชื่อวง จังหวะ BPM และสไตล์เพลง</p>
             </div>
           </div>
 
           <form method="post" action="{{ url_for('create') }}" class="space-y-3">
             <div>
               <input type="text" name="room_name" maxlength="{{ max_room }}" placeholder="ชื่อห้องซ้อม เช่น ซ้อมวง The Echoes, Jam Night" required
-                class="w-full bg-studio-900 border border-slate-700 rounded-2xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition text-sm">
+                class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-sky-100 focus:border-sky-500 transition text-sm">
             </div>
 
             <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="block text-[11px] text-slate-400 mb-1">ไอคอนห้อง</label>
-                <select name="room_icon" class="w-full bg-studio-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:ring-1 focus:ring-purple-500">
+                <label class="block text-[11px] text-slate-500 font-semibold mb-1">ไอคอนห้อง</label>
+                <select name="room_icon" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-200">
                   <option value="🎸">🎸 กีตาร์ (Guitar)</option>
                   <option value="🥁">🥁 กลอง (Drums)</option>
                   <option value="🎹">🎹 คีย์บอร์ด (Keys)</option>
@@ -592,22 +588,22 @@ LOBBY = r"""
               </div>
 
               <div>
-                <label class="block text-[11px] text-slate-400 mb-1">จังหวะเริ่มต้น (BPM)</label>
-                <input type="number" name="bpm" value="120" min="40" max="240" class="w-full bg-studio-900 border border-slate-700 rounded-xl px-3 py-2 text-cyan-300 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-purple-500">
+                <label class="block text-[11px] text-slate-500 font-semibold mb-1">จังหวะเริ่มต้น (BPM)</label>
+                <input type="number" name="bpm" value="120" min="40" max="240" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sky-700 font-mono text-xs font-bold focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-200">
               </div>
             </div>
 
-            <div class="bg-studio-900/60 p-3 rounded-2xl border border-slate-800 space-y-2">
-              <label class="flex items-center gap-2 cursor-pointer text-xs text-slate-300">
-                <input type="checkbox" id="privateCheck" name="is_private" value="1" onchange="togglePassInput()" class="rounded border-slate-700 text-purple-600 focus:ring-purple-500">
+            <div class="bg-sky-50/70 p-3 rounded-2xl border border-sky-100 space-y-2">
+              <label class="flex items-center gap-2 cursor-pointer text-xs text-slate-700 font-medium">
+                <input type="checkbox" id="privateCheck" name="is_private" value="1" onchange="togglePassInput()" class="rounded border-slate-300 text-sky-600 focus:ring-sky-500">
                 <span>ล็อกห้องด้วยรหัสผ่าน (Private Rehearsal)</span>
               </label>
               <div id="passBox" class="hidden">
-                <input type="password" name="password" maxlength="{{ max_pass }}" placeholder="กำหนดรหัสผ่านห้อง" class="w-full bg-studio-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-purple-500">
+                <input type="password" name="password" maxlength="{{ max_pass }}" placeholder="กำหนดรหัสผ่านห้อง" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-200">
               </div>
             </div>
 
-            <button type="submit" class="w-full rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 text-white font-bold py-3 shadow-lg shadow-purple-600/25 transition">
+            <button type="submit" class="w-full rounded-2xl bg-gradient-to-r from-sky-500 via-blue-600 to-cyan-600 hover:from-sky-600 hover:to-blue-700 text-white font-bold py-3 shadow-lg shadow-sky-500/25 transition">
               ➕ เปิดห้องซ้อมดนตรี
             </button>
           </form>
@@ -618,54 +614,54 @@ LOBBY = r"""
     <!-- Active Rehearsal Rooms List -->
     <div class="space-y-4">
       <div class="flex items-center justify-between">
-        <h3 class="text-xl font-bold text-white flex items-center gap-2">
+        <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2 font-display">
           <span>ห้องซ้อมที่เปิดอยู่ขณะนี้</span>
-          <span class="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 text-xs font-mono font-bold">{{ all_rooms|length }}</span>
+          <span class="px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-700 text-xs font-mono font-bold">{{ all_rooms|length }}</span>
         </h3>
       </div>
 
       {% if not all_rooms %}
-      <div class="glass-card rounded-3xl p-8 text-center border border-slate-800">
+      <div class="glass-card rounded-3xl p-8 text-center border border-sky-100">
         <div class="text-4xl mb-2">🎶</div>
-        <div class="text-slate-300 font-semibold">ยังไม่มีห้องซ้อมที่เปิดอยู่ในขณะนี้</div>
+        <div class="text-slate-700 font-semibold">ยังไม่มีห้องซ้อมที่เปิดอยู่ในขณะนี้</div>
         <p class="text-xs text-slate-500 mt-1">กดปุ่ม "เปิดห้องซ้อมดนตรีใหม่" ด้านบนเพื่อเริ่มแจมเพลงกับเพื่อนได้เลย!</p>
       </div>
       {% else %}
       <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {% for r in all_rooms %}
-        <div class="glass-card rounded-2xl p-5 border border-slate-800 hover:border-purple-500/40 transition flex flex-col justify-between group">
+        <div class="glass-card rounded-2xl p-5 border border-sky-100 hover:border-sky-300 hover:shadow-md transition flex flex-col justify-between group">
           <div>
             <div class="flex items-start justify-between gap-2 mb-2">
               <div class="flex items-center gap-2.5">
-                <div class="h-10 w-10 rounded-xl bg-studio-900 flex items-center justify-center text-xl border border-slate-700">
+                <div class="h-10 w-10 rounded-xl bg-sky-50 flex items-center justify-center text-xl border border-sky-200">
                   {{ r.icon or '🎸' }}
                 </div>
                 <div>
-                  <h4 class="font-bold text-white group-hover:text-purple-300 transition text-sm sm:text-base leading-snug">{{ r.name }}</h4>
-                  <div class="text-[11px] text-slate-400">โดย: {{ r.created_by }}</div>
+                  <h4 class="font-bold text-slate-800 group-hover:text-sky-600 transition text-sm sm:text-base leading-snug">{{ r.name }}</h4>
+                  <div class="text-[11px] text-slate-500">โดย: {{ r.created_by }}</div>
                 </div>
               </div>
 
               {% if r.is_private %}
-              <span class="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/30 text-[10px] font-bold shrink-0">🔒 รหัสผ่าน</span>
+              <span class="px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold shrink-0">🔒 รหัสผ่าน</span>
               {% else %}
-              <span class="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold shrink-0">🌐 สาธารณะ</span>
+              <span class="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold shrink-0">🌐 สาธารณะ</span>
               {% endif %}
             </div>
 
-            <div class="flex items-center gap-3 text-xs text-slate-400 my-3 bg-studio-900/60 p-2.5 rounded-xl border border-slate-800/80">
-              <div class="font-mono text-cyan-300 font-bold">#{{ r.code }}</div>
+            <div class="flex items-center gap-3 text-xs text-slate-600 my-3 bg-sky-50/60 p-2.5 rounded-xl border border-sky-100">
+              <div class="font-mono text-sky-700 font-bold">#{{ r.code }}</div>
               <div>•</div>
-              <div>BPM: <span class="text-purple-300 font-mono font-bold">{{ r.bpm or 120 }}</span></div>
+              <div>BPM: <span class="text-blue-700 font-mono font-bold">{{ r.bpm or 120 }}</span></div>
               <div>•</div>
               <div class="flex items-center gap-1">
-                <span class="h-2 w-2 rounded-full {{ 'bg-emerald-400 animate-pulse' if r.online > 0 else 'bg-slate-600' }}"></span>
+                <span class="h-2 w-2 rounded-full {{ 'bg-emerald-500 animate-pulse' if r.online > 0 else 'bg-slate-400' }}"></span>
                 <span>{{ r.online }} คนในห้อง</span>
               </div>
             </div>
           </div>
 
-          <a href="{{ url_for('room', code=r.code) }}" class="w-full py-2.5 text-center text-xs font-bold rounded-xl bg-purple-600/80 hover:bg-purple-600 text-white transition flex items-center justify-center gap-1.5">
+          <a href="{{ url_for('room', code=r.code) }}" class="w-full py-2.5 text-center text-xs font-bold rounded-xl bg-sky-600 hover:bg-sky-700 text-white shadow-md shadow-sky-500/20 transition flex items-center justify-center gap-1.5">
             <span>เข้าร่วมห้องซ้อมนี้</span>
             <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
           </a>
@@ -689,51 +685,49 @@ function togglePassInput() {
 
 # ───────────────────────────── Password Prompt ─────────────────────────────
 PASSWORD_PROMPT = r"""
-<div class="min-h-screen flex items-center justify-center p-4 bg-studio-950">
-  <div class="w-full max-w-sm glass-studio rounded-3xl p-8 border border-slate-800 text-center shadow-2xl">
-    <div class="h-16 w-16 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center mx-auto mb-4 text-3xl border border-amber-500/30">
+<div class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-sky-400 via-blue-500 to-cyan-600">
+  <div class="w-full max-w-sm bg-white/95 backdrop-blur-xl rounded-3xl p-8 border border-white/40 text-center shadow-2xl">
+    <div class="h-16 w-16 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto mb-4 text-3xl border border-amber-200">
       🔒
     </div>
-    <h2 class="text-xl font-bold text-white mb-1">ห้องนี้ต้องใช้รหัสผ่าน</h2>
-    <p class="text-xs text-slate-400 mb-6 font-mono">ห้อง: “{{ room.name }}” (#{{ room.code }})</p>
+    <h2 class="text-xl font-bold text-slate-800 mb-1 font-display">ห้องนี้ต้องใช้รหัสผ่าน</h2>
+    <p class="text-xs text-slate-500 mb-6 font-mono">ห้อง: “{{ room.name }}” (#{{ room.code }})</p>
 
     <form method="post" action="{{ url_for('verify_room_password', code=room.code) }}" class="space-y-4">
       <input type="password" name="password" required autofocus placeholder="กรอกรหัสผ่านเพื่อเข้าห้อง"
-        class="w-full bg-studio-900 border border-slate-700 rounded-2xl px-4 py-3.5 text-center text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition">
-      <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-purple-600 to-cyan-600 text-white font-bold rounded-2xl shadow-lg transition">
+        class="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3.5 text-center text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-sky-100 focus:border-sky-500 transition">
+      <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-bold rounded-2xl shadow-lg shadow-sky-500/30 transition">
         ปลดล็อกเข้าห้องซ้อม
       </button>
-      <a href="{{ url_for('index') }}" class="block text-xs text-slate-400 hover:text-slate-200 mt-2">กลับสู่หน้าล็อบบี้</a>
+      <a href="{{ url_for('index') }}" class="block text-xs text-slate-500 hover:text-slate-800 mt-2">กลับสู่หน้าล็อบบี้</a>
     </form>
   </div>
 </div>
 """
 
 
-# ───────────────────────────── Main Studio Rehearsal Room ─────────────────────────────
+# ───────────────────────────── Main Studio Rehearsal Room (Bright Sky Blue) ─────────────────────────────
 ROOM = r"""
-<div class="min-h-screen bg-studio-950 text-slate-100 flex flex-col h-screen overflow-hidden">
-  <!-- Top Control Bar / DAW Studio Header -->
-  <header class="glass-studio border-b border-slate-800/90 px-3 py-2 shrink-0 z-30 flex items-center justify-between gap-2">
+<div class="min-h-screen bg-slate-100 text-slate-800 flex flex-col h-screen overflow-hidden">
+  <!-- Top Control Bar / Studio Header -->
+  <header class="bg-white/95 backdrop-blur-md border-b border-sky-100 px-3 py-2 shrink-0 z-30 flex items-center justify-between gap-2 shadow-sm">
     <!-- Left: Room info & back -->
     <div class="flex items-center gap-2 sm:gap-3 min-w-0">
-      <a href="{{ url_for('index') }}" class="p-1.5 rounded-xl bg-studio-900 hover:bg-studio-800 text-slate-400 hover:text-white transition" title="กลับล็อบบี้">
+      <a href="{{ url_for('index') }}" class="p-1.5 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 transition" title="กลับล็อบบี้">
         <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
       </a>
 
       <div class="flex items-center gap-2 min-w-0">
-        <div class="h-9 w-9 rounded-xl bg-gradient-to-tr from-purple-600 to-cyan-500 p-0.5 shrink-0">
-          <div class="w-full h-full bg-studio-950 rounded-[10px] flex items-center justify-center text-lg">
-            {{ room.icon or '🎸' }}
-          </div>
+        <div class="h-9 w-9 rounded-xl bg-gradient-to-tr from-sky-400 to-blue-600 flex items-center justify-center text-lg text-white shadow-sm shrink-0">
+          {{ room.icon or '🎸' }}
         </div>
         <div class="min-w-0">
           <div class="flex items-center gap-2">
-            <h1 class="text-sm sm:text-base font-bold text-white truncate">{{ room.name }}</h1>
-            <span class="px-2 py-0.5 rounded-md bg-studio-900 text-cyan-300 font-mono text-xs font-bold border border-slate-700">#{{ room.code }}</span>
+            <h1 class="text-sm sm:text-base font-bold text-slate-800 truncate font-display">{{ room.name }}</h1>
+            <span class="px-2 py-0.5 rounded-md bg-sky-50 text-sky-700 font-mono text-xs font-bold border border-sky-200">#{{ room.code }}</span>
           </div>
-          <div class="text-[10px] text-slate-400 flex items-center gap-1.5">
-            <span class="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <div class="text-[10px] text-slate-500 flex items-center gap-1.5">
+            <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
             <span>สด P2P Mesh</span>
             <span>•</span>
             <span id="memberCountText">1 สมาชิก</span>
@@ -743,46 +737,46 @@ ROOM = r"""
     </div>
 
     <!-- Center: Master Metronome & Recording Status Bar -->
-    <div class="hidden md:flex items-center gap-3 bg-studio-900/90 px-4 py-1.5 rounded-2xl border border-slate-800">
+    <div class="hidden md:flex items-center gap-3 bg-sky-50/80 px-4 py-1.5 rounded-2xl border border-sky-200">
       <!-- Metronome Control -->
       <div class="flex items-center gap-2">
-        <button id="metronomeBtn" onclick="toggleMetronome()" class="p-1.5 rounded-lg bg-studio-950 hover:bg-purple-900/50 text-slate-300 border border-slate-700 text-xs font-bold flex items-center gap-1.5 transition">
+        <button id="metronomeBtn" onclick="toggleMetronome()" class="p-1.5 rounded-lg bg-white hover:bg-sky-100 text-slate-700 border border-slate-200 text-xs font-bold flex items-center gap-1.5 transition">
           <span id="metronomeIcon">⏱️</span>
           <span>BPM</span>
         </button>
         <div class="flex items-center gap-1">
           <input type="number" id="bpmInput" value="{{ room.bpm or 120 }}" min="40" max="240" onchange="updateBpm(this.value)"
-            class="w-14 bg-studio-950 border border-slate-700 rounded-lg px-2 py-1 text-xs font-mono text-center font-bold text-cyan-300 focus:outline-none focus:ring-1 focus:ring-purple-500">
-          <div id="metroIndicator" class="h-3 w-3 rounded-full bg-slate-700 transition"></div>
+            class="w-14 bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-mono text-center font-bold text-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-300">
+          <div id="metroIndicator" class="h-3 w-3 rounded-full bg-slate-300 transition"></div>
         </div>
       </div>
 
-      <div class="h-4 w-px bg-slate-700"></div>
+      <div class="h-4 w-px bg-sky-200"></div>
 
       <!-- Live Studio Recorder -->
       <div class="flex items-center gap-2">
-        <button id="recordBtn" onclick="toggleRecording()" class="px-3 py-1 rounded-lg bg-rose-600/20 hover:bg-rose-600/40 text-rose-400 border border-rose-500/40 text-xs font-bold flex items-center gap-1.5 transition">
+        <button id="recordBtn" onclick="toggleRecording()" class="px-3 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-xs font-bold flex items-center gap-1.5 transition">
           <span class="h-2 w-2 rounded-full bg-rose-500" id="recDot"></span>
           <span id="recText">บันทึกวิดีโอ & เสียง</span>
         </button>
-        <span id="recTimer" class="font-mono text-xs text-rose-400 hidden font-bold">00:00</span>
+        <span id="recTimer" class="font-mono text-xs text-rose-600 hidden font-bold">00:00</span>
       </div>
     </div>
 
     <!-- Right: Audio Mode Selector & Controls -->
     <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
       <!-- Instrument / Mic Audio Mode Switch -->
-      <button id="audioModeBtn" onclick="toggleAudioMode()" class="px-2.5 py-1.5 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 text-xs font-bold flex items-center gap-1.5 transition" title="คลิกเพื่อสลับระหว่างโหมดเครื่องดนตรีจริง (ปิด Echo Filter เสียงใสเต็มย่าน) หรือโหมดไมค์พูดคุย">
+      <button id="audioModeBtn" onclick="toggleAudioMode()" class="px-2.5 py-1.5 rounded-xl bg-sky-100 hover:bg-sky-200 text-sky-800 border border-sky-300 text-xs font-bold flex items-center gap-1.5 transition shadow-sm" title="คลิกเพื่อสลับระหว่างโหมดเครื่องดนตรีจริง (ปิด Echo Filter เสียงใสเต็มย่าน) หรือโหมดไมค์พูดคุย">
         <span id="audioModeIcon">🎸</span>
         <span class="hidden lg:inline" id="audioModeText">เครื่องดนตรีจริง (Hi-Fi)</span>
       </button>
 
-      <button onclick="showQrModal('{{ room_url }}', 'สแกน QR เข้าร่วมห้องซ้อมนี้')" class="p-2 rounded-xl bg-studio-900 hover:bg-studio-800 text-cyan-300 border border-slate-700 text-xs transition" title="QR Code เข้าห้องนี้">
+      <button onclick="showQrModal('{{ room_url }}', 'สแกน QR เข้าร่วมห้องซ้อมนี้')" class="p-2 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 text-xs transition" title="QR Code เข้าห้องนี้">
         📱
       </button>
 
       {% if is_admin %}
-      <button onclick="confirmDeleteRoom()" class="p-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 text-xs transition" title="ลบห้องนี้ (เฉพาะ Admin)">
+      <button onclick="confirmDeleteRoom()" class="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-xs transition" title="ลบห้องนี้ (เฉพาะ Admin)">
         🗑️
       </button>
       {% endif %}
@@ -790,48 +784,48 @@ ROOM = r"""
   </header>
 
   <!-- Mobile Metronome & Record bar -->
-  <div class="md:hidden flex items-center justify-between px-3 py-1.5 bg-studio-900 border-b border-slate-800 text-xs">
+  <div class="md:hidden flex items-center justify-between px-3 py-1.5 bg-sky-50 border-b border-sky-200 text-xs">
     <div class="flex items-center gap-2">
-      <button onclick="toggleMetronome()" class="px-2 py-1 rounded bg-studio-950 text-slate-300 border border-slate-700 flex items-center gap-1 font-bold">
+      <button onclick="toggleMetronome()" class="px-2 py-1 rounded bg-white text-slate-700 border border-slate-200 flex items-center gap-1 font-bold">
         <span>⏱️</span> <span id="mBpmVal">120</span>
       </button>
-      <div id="mMetroIndicator" class="h-2.5 w-2.5 rounded-full bg-slate-700"></div>
+      <div id="mMetroIndicator" class="h-2.5 w-2.5 rounded-full bg-slate-300"></div>
     </div>
     <div class="flex items-center gap-2">
-      <button onclick="toggleRecording()" class="px-2 py-1 rounded bg-rose-500/20 text-rose-400 border border-rose-500/40 flex items-center gap-1 font-bold">
+      <button onclick="toggleRecording()" class="px-2 py-1 rounded bg-rose-50 text-rose-600 border border-rose-200 flex items-center gap-1 font-bold">
         <span class="h-2 w-2 rounded-full bg-rose-500"></span>
         <span id="mRecText">อัดสด</span>
       </button>
-      <span id="mRecTimer" class="font-mono text-rose-400 hidden font-bold text-[11px]">00:00</span>
+      <span id="mRecTimer" class="font-mono text-rose-600 hidden font-bold text-[11px]">00:00</span>
     </div>
   </div>
 
   <!-- Main Studio Workspace (Video/Audio Stage + Side Chat/Tools) -->
   <div class="flex-1 flex overflow-hidden">
     <!-- Left Stage: Band Video & Audio Mesh Grid -->
-    <div class="flex-1 flex flex-col min-w-0 bg-studio-950 relative overflow-y-auto p-3 sm:p-4 space-y-3">
+    <div class="flex-1 flex flex-col min-w-0 bg-slate-100/80 relative overflow-y-auto p-3 sm:p-4 space-y-3">
       <!-- Stage Grid Container -->
       <div id="stageGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 flex-1 items-stretch auto-rows-fr min-h-[320px]">
         
         <!-- Local User Tile (My Stream) -->
-        <div class="glass-card rounded-2xl p-3 border border-purple-500/40 relative flex flex-col justify-between overflow-hidden shadow-xl group">
+        <div class="glass-card rounded-2xl p-3 border border-sky-200 relative flex flex-col justify-between overflow-hidden shadow-md group">
           <!-- Video element or Avatar stage -->
-          <div class="relative w-full flex-1 min-h-[160px] bg-studio-900 rounded-xl overflow-hidden flex items-center justify-center">
+          <div class="relative w-full flex-1 min-h-[160px] bg-gradient-to-br from-sky-900 to-slate-900 rounded-xl overflow-hidden flex items-center justify-center">
             <video id="localVideo" autoplay playsinline muted class="w-full h-full object-cover hidden"></video>
             
             <!-- Default Instrument Avatar Display -->
             <div id="localAvatarBox" class="flex flex-col items-center justify-center p-4 text-center">
-              <div class="h-20 w-20 rounded-2xl bg-gradient-to-tr from-purple-600 to-cyan-500 p-0.5 mb-2 shadow-lg">
-                <div class="w-full h-full bg-studio-950 rounded-[14px] flex items-center justify-center text-3xl">
+              <div class="h-20 w-20 rounded-2xl bg-gradient-to-tr from-sky-400 to-blue-600 p-0.5 mb-2 shadow-lg">
+                <div class="w-full h-full bg-white rounded-[14px] flex items-center justify-center text-3xl">
                   {{ my_role.split(' ')[0] if my_role else '🎸' }}
                 </div>
               </div>
               <div class="text-sm font-bold text-white">{{ me }} (คุณ)</div>
-              <div class="text-xs text-purple-300 font-semibold">{{ my_role or '🎸 Lead Guitar' }}</div>
+              <div class="text-xs text-sky-200 font-semibold">{{ my_role or '🎸 Lead Guitar' }}</div>
             </div>
 
             <!-- Audio Waveform / VU Overlay on Video -->
-            <div class="absolute bottom-2 left-2 right-2 flex items-center justify-between bg-black/60 backdrop-blur-md px-2.5 py-1.5 rounded-lg border border-white/10 text-xs">
+            <div class="absolute bottom-2 left-2 right-2 flex items-center justify-between bg-black/60 backdrop-blur-md px-2.5 py-1.5 rounded-lg border border-white/15 text-xs text-white">
               <div class="flex items-center gap-1.5">
                 <span id="localMicIcon">🎤</span>
                 <div class="w-20 sm:w-28 bg-slate-800 h-2 rounded-full overflow-hidden">
@@ -843,14 +837,14 @@ ROOM = r"""
           </div>
 
           <!-- My Tile Bottom Status -->
-          <div class="mt-2 flex items-center justify-between text-xs pt-1 border-t border-slate-800">
-            <div class="flex items-center gap-1.5 font-bold text-white text-xs truncate">
+          <div class="mt-2 flex items-center justify-between text-xs pt-1 border-t border-slate-100">
+            <div class="flex items-center gap-1.5 font-bold text-slate-800 text-xs truncate">
               <span>{{ me }}</span>
-              <span class="text-slate-400 font-normal">({{ my_role.split(' ')[1] if my_role and ' ' in my_role else 'Musician' }})</span>
+              <span class="text-slate-500 font-normal">({{ my_role.split(' ')[1] if my_role and ' ' in my_role else 'Musician' }})</span>
             </div>
             <div class="flex items-center gap-1">
-              <span id="myCamStatus" class="p-1 rounded bg-slate-800 text-slate-400 text-[10px]">📷 ปิด</span>
-              <span id="myMicStatus" class="p-1 rounded bg-emerald-950 text-emerald-300 text-[10px] font-bold">🎙️ ส่งเสียง</span>
+              <span id="myCamStatus" class="p-1 rounded bg-slate-100 text-slate-500 text-[10px]">📷 ปิด</span>
+              <span id="myMicStatus" class="p-1 rounded bg-emerald-100 text-emerald-700 text-[10px] font-bold">🎙️ ส่งเสียง</span>
             </div>
           </div>
         </div>
@@ -859,29 +853,29 @@ ROOM = r"""
       </div>
 
       <!-- Studio Stage Bottom Audio & Video Hardware Controls -->
-      <div class="glass-studio rounded-2xl p-3 border border-slate-800 flex flex-wrap items-center justify-between gap-3 shrink-0">
+      <div class="bg-white/95 backdrop-blur-md rounded-2xl p-3 border border-sky-100 shadow-sm flex flex-wrap items-center justify-between gap-3 shrink-0">
         <!-- Mic & Instrument Input Selection -->
         <div class="flex items-center gap-2 flex-wrap">
           <!-- Mic / Instrument On/Off Toggle -->
-          <button id="toggleMicBtn" onclick="toggleAudioTrack()" class="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 transition shadow-lg shadow-emerald-600/20">
+          <button id="toggleMicBtn" onclick="toggleAudioTrack()" class="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 transition shadow-sm">
             <span id="micBtnIcon">🎙️</span>
             <span id="micBtnText">ส่งเสียงสด (ON)</span>
           </button>
 
           <!-- Camera On/Off Toggle -->
-          <button id="toggleCamBtn" onclick="toggleVideoTrack()" class="px-3 py-2 rounded-xl bg-studio-900 hover:bg-studio-800 text-slate-300 border border-slate-700 font-bold text-xs flex items-center gap-1.5 transition">
+          <button id="toggleCamBtn" onclick="toggleVideoTrack()" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 font-bold text-xs flex items-center gap-1.5 transition">
             <span id="camBtnIcon">📷</span>
             <span id="camBtnText">เปิดกล้อง</span>
           </button>
 
           <!-- Screen / Sheet Music Share -->
-          <button id="shareScreenBtn" onclick="toggleScreenShare()" class="px-3 py-2 rounded-xl bg-studio-900 hover:bg-studio-800 text-cyan-300 border border-slate-700 font-bold text-xs flex items-center gap-1.5 transition">
+          <button id="shareScreenBtn" onclick="toggleScreenShare()" class="px-3 py-2 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 font-bold text-xs flex items-center gap-1.5 transition">
             <span>📑</span>
             <span id="shareScreenText">แชร์โน้ต/จอ</span>
           </button>
 
           <!-- Instrument Tuner Quick Modal -->
-          <button onclick="toggleTunerModal()" class="px-3 py-2 rounded-xl bg-studio-900 hover:bg-purple-900/40 text-purple-300 border border-purple-500/30 font-bold text-xs flex items-center gap-1.5 transition">
+          <button onclick="toggleTunerModal()" class="px-3 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 font-bold text-xs flex items-center gap-1.5 transition">
             <span>🎯</span>
             <span>เทียบเสียง Tuner (A440)</span>
           </button>
@@ -889,25 +883,25 @@ ROOM = r"""
 
         <!-- Latency & Buffer Diagnostic Badge -->
         <div class="flex items-center gap-3 text-xs">
-          <div class="flex items-center gap-1.5 font-mono text-slate-400 bg-studio-900 px-2.5 py-1.5 rounded-lg border border-slate-800">
-            <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
-            <span>Latency: <strong class="text-cyan-300" id="pingMs">~15-30ms</strong></span>
+          <div class="flex items-center gap-1.5 font-mono text-slate-600 bg-sky-50 px-2.5 py-1.5 rounded-lg border border-sky-200">
+            <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+            <span>Latency: <strong class="text-sky-700" id="pingMs">~15-30ms</strong></span>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Right Sidebar: Tabs for Chat / Sheet Music / Band Members -->
-    <div class="w-80 lg:w-96 glass-studio border-l border-slate-800 flex flex-col shrink-0 hidden md:flex">
+    <div class="w-80 lg:w-96 bg-white border-l border-sky-100 flex flex-col shrink-0 hidden md:flex shadow-sm">
       <!-- Sidebar Navigation Header -->
-      <div class="p-2 border-b border-slate-800/80 flex items-center justify-between gap-1 bg-studio-900/60">
-        <button onclick="switchSidebarTab('chat')" id="tabChatBtn" class="flex-1 py-1.5 rounded-lg text-xs font-bold transition bg-purple-600 text-white">
+      <div class="p-2 border-b border-sky-100 flex items-center justify-between gap-1 bg-sky-50/50">
+        <button onclick="switchSidebarTab('chat')" id="tabChatBtn" class="flex-1 py-1.5 rounded-lg text-xs font-bold transition bg-sky-600 text-white shadow-sm">
           💬 แชท & คอร์ด
         </button>
-        <button onclick="switchSidebarTab('members')" id="tabMembersBtn" class="flex-1 py-1.5 rounded-lg text-xs font-bold transition text-slate-400 hover:text-white">
-          👥 สมาชิกวง (<span id="memberCountBadge">1</span>)
+        <button onclick="switchSidebarTab('members')" id="tabMembersBtn" class="flex-1 py-1.5 rounded-lg text-xs font-bold transition text-slate-600 hover:text-sky-700">
+          👥 สมาชิก (<span id="memberCountBadge">1</span>)
         </button>
-        <button onclick="switchSidebarTab('tools')" id="tabToolsBtn" class="flex-1 py-1.5 rounded-lg text-xs font-bold transition text-slate-400 hover:text-white">
+        <button onclick="switchSidebarTab('tools')" id="tabToolsBtn" class="flex-1 py-1.5 rounded-lg text-xs font-bold transition text-slate-600 hover:text-sky-700">
           🎛️ เครื่องมือ
         </button>
       </div>
@@ -916,34 +910,34 @@ ROOM = r"""
       <div id="tabChat" class="flex-1 flex flex-col min-h-0">
         <!-- Messages Area -->
         <div id="messagesBox" class="flex-1 p-3 overflow-y-auto space-y-3 font-sans text-xs">
-          <div class="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-300 text-center">
+          <div class="p-3 rounded-xl bg-sky-50 border border-sky-100 text-sky-800 text-center">
             🎸 ยินดีต้อนรับสู่ห้องซ้อมดนตรีสด พิมพ์แชท ส่งคอร์ดเพลง หรือแชร์ไฟล์ที่นี่
           </div>
         </div>
 
         <!-- Chat Input Form -->
-        <div class="p-3 border-t border-slate-800 bg-studio-900/90 space-y-2">
+        <div class="p-3 border-t border-sky-100 bg-sky-50/40 space-y-2">
           <!-- Quick Chord Helper Bar -->
           <div class="flex items-center gap-1 overflow-x-auto pb-1 scroll-thin text-[11px]">
-            <span class="text-slate-500 text-[10px] shrink-0">คอร์ดลัด:</span>
-            <button onclick="insertChord('[C] ')" class="px-1.5 py-0.5 bg-studio-800 hover:bg-slate-700 text-cyan-300 rounded font-mono">C</button>
-            <button onclick="insertChord('[Dm] ')" class="px-1.5 py-0.5 bg-studio-800 hover:bg-slate-700 text-cyan-300 rounded font-mono">Dm</button>
-            <button onclick="insertChord('[Em] ')" class="px-1.5 py-0.5 bg-studio-800 hover:bg-slate-700 text-cyan-300 rounded font-mono">Em</button>
-            <button onclick="insertChord('[F] ')" class="px-1.5 py-0.5 bg-studio-800 hover:bg-slate-700 text-cyan-300 rounded font-mono">F</button>
-            <button onclick="insertChord('[G] ')" class="px-1.5 py-0.5 bg-studio-800 hover:bg-slate-700 text-cyan-300 rounded font-mono">G</button>
-            <button onclick="insertChord('[Am] ')" class="px-1.5 py-0.5 bg-studio-800 hover:bg-slate-700 text-cyan-300 rounded font-mono">Am</button>
+            <span class="text-slate-400 text-[10px] shrink-0">คอร์ดลัด:</span>
+            <button onclick="insertChord('[C] ')" class="px-2 py-0.5 bg-white border border-sky-200 hover:bg-sky-100 text-sky-700 rounded font-mono font-bold">C</button>
+            <button onclick="insertChord('[Dm] ')" class="px-2 py-0.5 bg-white border border-sky-200 hover:bg-sky-100 text-sky-700 rounded font-mono font-bold">Dm</button>
+            <button onclick="insertChord('[Em] ')" class="px-2 py-0.5 bg-white border border-sky-200 hover:bg-sky-100 text-sky-700 rounded font-mono font-bold">Em</button>
+            <button onclick="insertChord('[F] ')" class="px-2 py-0.5 bg-white border border-sky-200 hover:bg-sky-100 text-sky-700 rounded font-mono font-bold">F</button>
+            <button onclick="insertChord('[G] ')" class="px-2 py-0.5 bg-white border border-sky-200 hover:bg-sky-100 text-sky-700 rounded font-mono font-bold">G</button>
+            <button onclick="insertChord('[Am] ')" class="px-2 py-0.5 bg-white border border-sky-200 hover:bg-sky-100 text-sky-700 rounded font-mono font-bold">Am</button>
           </div>
 
           <form id="chatForm" onsubmit="sendChatMessage(event)" class="flex gap-2">
             <input type="text" id="chatInput" placeholder="พิมพ์ข้อความ / คอร์ดเพลง..." maxlength="{{ max_msg }}" autocomplete="off"
-              class="flex-1 bg-studio-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-purple-500">
+              class="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-300">
             
-            <label class="p-2 rounded-xl bg-studio-800 hover:bg-slate-700 text-slate-300 cursor-pointer flex items-center justify-center transition" title="แนบไฟล์เสียง / แท็บเพลง / ภาพ">
+            <label class="p-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 cursor-pointer flex items-center justify-center transition" title="แนบไฟล์เสียง / แท็บเพลง / ภาพ">
               <input type="file" id="chatFileInput" onchange="handleChatFileUpload(this)" class="hidden" accept="image/*,audio/*,.pdf,.txt,.gp,.gp5">
               📎
             </label>
 
-            <button type="submit" class="px-3 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold transition flex items-center">
+            <button type="submit" class="px-3 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold transition flex items-center shadow-sm">
               ส่ง
             </button>
           </form>
@@ -952,7 +946,7 @@ ROOM = r"""
 
       <!-- Tab 2: Band Members Tab -->
       <div id="tabMembers" class="flex-1 p-3 overflow-y-auto space-y-2 hidden">
-        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">สมาชิกในห้องซ้อม</h4>
+        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">สมาชิกในห้องซ้อม</h4>
         <div id="membersList" class="space-y-2">
           <!-- Dynamic Member Items -->
         </div>
@@ -960,45 +954,45 @@ ROOM = r"""
 
       <!-- Tab 3: Studio Tools Tab (Metronome, Tuner, Audio Device settings) -->
       <div id="tabTools" class="flex-1 p-4 overflow-y-auto space-y-4 hidden text-xs">
-        <div class="glass-card rounded-2xl p-3 border border-slate-800 space-y-2">
-          <h4 class="font-bold text-white flex items-center gap-1.5">
+        <div class="glass-card rounded-2xl p-3 border border-sky-100 space-y-2 shadow-sm">
+          <h4 class="font-bold text-slate-800 flex items-center gap-1.5">
             <span>⏱️</span> <span>เครื่องเคาะจังหวะ Metronome</span>
           </h4>
           <div class="flex items-center justify-between">
-            <span class="text-slate-400">Tempo:</span>
-            <span class="font-mono text-cyan-300 font-bold text-sm" id="toolBpmDisplay">120 BPM</span>
+            <span class="text-slate-500">Tempo:</span>
+            <span class="font-mono text-sky-700 font-bold text-sm" id="toolBpmDisplay">120 BPM</span>
           </div>
-          <input type="range" min="40" max="240" value="{{ room.bpm or 120 }}" oninput="updateBpm(this.value)" class="w-full accent-purple-500">
+          <input type="range" min="40" max="240" value="{{ room.bpm or 120 }}" oninput="updateBpm(this.value)" class="w-full accent-sky-600">
           <div class="flex gap-2">
-            <button onclick="toggleMetronome()" class="flex-1 py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg transition text-xs">
+            <button onclick="toggleMetronome()" class="flex-1 py-1.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-lg transition text-xs shadow-sm">
               เปิด / ปิด Metronome
             </button>
-            <button onclick="tapTempo()" class="px-3 py-1.5 bg-studio-900 border border-slate-700 hover:bg-studio-800 text-cyan-300 font-bold rounded-lg transition text-xs">
+            <button onclick="tapTempo()" class="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-sky-700 font-bold rounded-lg transition text-xs">
               Tap Tempo
             </button>
           </div>
         </div>
 
-        <div class="glass-card rounded-2xl p-3 border border-slate-800 space-y-2">
-          <h4 class="font-bold text-white flex items-center gap-1.5">
+        <div class="glass-card rounded-2xl p-3 border border-sky-100 space-y-2 shadow-sm">
+          <h4 class="font-bold text-slate-800 flex items-center gap-1.5">
             <span>🎸</span> <span>โหมดเสียงเครื่องดนตรี (Instrument DSP)</span>
           </h4>
-          <p class="text-[11px] text-slate-400 leading-relaxed">
+          <p class="text-[11px] text-slate-600 leading-relaxed">
             เมื่อเปิดใช้งาน ระบบจะ<strong>ปิดการตัดเสียงก้อง (Echo Cancellation) และตัวกรองเสียงพูด (Noise Suppression)</strong> ของเบราว์เซอร์ เพื่อให้เสียงกีตาร์ เบส และกลอง ไม่ถูกตัดทอนความถี่ย่านเสียงดนตรี
           </p>
           <div class="pt-1">
-            <button onclick="toggleAudioMode()" class="w-full py-2 bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 text-white font-bold rounded-xl transition">
+            <button onclick="toggleAudioMode()" class="w-full py-2 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-bold rounded-xl transition shadow-md shadow-sky-500/20">
               สลับโหมดเสียง (ปัจจุบัน: <span id="toolModeText">Hi-Fi เครื่องดนตรี</span>)
             </button>
           </div>
         </div>
 
-        <div class="glass-card rounded-2xl p-3 border border-slate-800 space-y-2">
-          <h4 class="font-bold text-white flex items-center gap-1.5">
+        <div class="glass-card rounded-2xl p-3 border border-sky-100 space-y-2 shadow-sm">
+          <h4 class="font-bold text-slate-800 flex items-center gap-1.5">
             <span>🎯</span> <span>เทียบเสียงมาตรฐาน (A440 Reference Tone)</span>
           </h4>
-          <p class="text-[11px] text-slate-400">สร้างเสียงความถี่มาตรฐาน 440Hz เพื่อจูนเครื่องดนตรี</p>
-          <button onclick="playA440Tone()" id="a440Btn" class="w-full py-1.5 bg-studio-900 border border-purple-500/40 text-purple-300 font-bold rounded-lg hover:bg-purple-900/30 transition">
+          <p class="text-[11px] text-slate-600">สร้างเสียงความถี่มาตรฐาน 440Hz เพื่อจูนเครื่องดนตรี</p>
+          <button onclick="playA440Tone()" id="a440Btn" class="w-full py-1.5 bg-sky-50 border border-sky-200 text-sky-700 font-bold rounded-lg hover:bg-sky-100 transition">
             🔊 เล่นเสียง A440 (กดซ้ำเพื่อหยุด)
           </button>
         </div>
@@ -1007,20 +1001,20 @@ ROOM = r"""
   </div>
 
   <!-- Mobile Bottom Tab Bar -->
-  <div class="md:hidden glass-studio border-t border-slate-800 px-4 py-2 flex items-center justify-around text-xs shrink-0">
-    <button onclick="toggleMobileChatSheet()" class="flex flex-col items-center gap-1 text-purple-400 font-bold">
+  <div class="md:hidden bg-white border-t border-sky-100 px-4 py-2 flex items-center justify-around text-xs shrink-0 shadow-lg">
+    <button onclick="toggleMobileChatSheet()" class="flex flex-col items-center gap-1 text-sky-600 font-bold">
       <span class="text-base">💬</span>
       <span class="text-[10px]">แชท/คอร์ด</span>
     </button>
-    <button onclick="toggleAudioTrack()" class="flex flex-col items-center gap-1 text-emerald-400 font-bold">
+    <button onclick="toggleAudioTrack()" class="flex flex-col items-center gap-1 text-emerald-600 font-bold">
       <span class="text-base" id="mMicBtnIcon">🎙️</span>
       <span class="text-[10px]">ส่งเสียง</span>
     </button>
-    <button onclick="toggleVideoTrack()" class="flex flex-col items-center gap-1 text-slate-400 font-bold">
+    <button onclick="toggleVideoTrack()" class="flex flex-col items-center gap-1 text-slate-600 font-bold">
       <span class="text-base" id="mCamBtnIcon">📷</span>
       <span class="text-[10px]">เปิดกล้อง</span>
     </button>
-    <button onclick="toggleAudioMode()" class="flex flex-col items-center gap-1 text-cyan-400 font-bold">
+    <button onclick="toggleAudioMode()" class="flex flex-col items-center gap-1 text-blue-600 font-bold">
       <span class="text-base">🎸</span>
       <span class="text-[10px]">โหมดเสียง</span>
     </button>
@@ -1028,39 +1022,39 @@ ROOM = r"""
 </div>
 
 <!-- Mobile Chat Slide-over Modal -->
-<div id="mobileChatSheet" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex-col justify-end md:hidden">
-  <div class="glass-card rounded-t-3xl border-t border-purple-500/30 h-[80vh] flex flex-col p-4">
-    <div class="flex items-center justify-between pb-3 border-b border-slate-800">
-      <h3 class="font-bold text-white text-sm">💬 แชท & คอร์ดเพลงในห้องซ้อม</h3>
-      <button onclick="toggleMobileChatSheet()" class="p-1 rounded-full bg-slate-800 text-slate-300">&times;</button>
+<div id="mobileChatSheet" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex-col justify-end md:hidden">
+  <div class="bg-white rounded-t-3xl border-t border-sky-200 h-[80vh] flex flex-col p-4 shadow-2xl">
+    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+      <h3 class="font-bold text-slate-800 text-sm">💬 แชท & คอร์ดเพลงในห้องซ้อม</h3>
+      <button onclick="toggleMobileChatSheet()" class="p-1 rounded-full bg-slate-100 text-slate-500">&times;</button>
     </div>
     <div id="mChatMessagesBox" class="flex-1 overflow-y-auto p-2 space-y-2 text-xs"></div>
-    <form onsubmit="sendChatMessage(event, true)" class="flex gap-2 pt-2 border-t border-slate-800">
-      <input type="text" id="mChatInput" placeholder="พิมพ์ข้อความ..." class="flex-1 bg-studio-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
-      <button type="submit" class="px-4 py-2 bg-purple-600 text-white font-bold rounded-xl text-xs">ส่ง</button>
+    <form onsubmit="sendChatMessage(event, true)" class="flex gap-2 pt-2 border-t border-slate-100">
+      <input type="text" id="mChatInput" placeholder="พิมพ์ข้อความ..." class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800">
+      <button type="submit" class="px-4 py-2 bg-sky-600 text-white font-bold rounded-xl text-xs">ส่ง</button>
     </form>
   </div>
 </div>
 
 <!-- Tuner Reference Modal -->
-<div id="tunerModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4">
-  <div class="glass-card rounded-3xl p-6 max-w-sm w-full border border-purple-500/30 text-center relative space-y-4">
-    <button onclick="toggleTunerModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">&times;</button>
+<div id="tunerModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
+  <div class="bg-white rounded-3xl p-6 max-w-sm w-full border border-sky-100 text-center relative space-y-4 shadow-2xl">
+    <button onclick="toggleTunerModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">&times;</button>
     <div class="text-3xl">🎯</div>
-    <h3 class="text-lg font-bold text-white">Guitar / Bass Tuner Reference</h3>
-    <p class="text-xs text-slate-400">กดเพื่อฟังเสียงเทียบสายมาตรฐาน</p>
+    <h3 class="text-lg font-bold text-slate-800 font-display">Guitar / Bass Tuner Reference</h3>
+    <p class="text-xs text-slate-500">กดเพื่อฟังเสียงเทียบสายมาตรฐาน</p>
     
     <div class="grid grid-cols-3 gap-2 text-xs font-mono">
-      <button onclick="playNoteFrequency(82.41, 'E2 (สาย 6)')" class="p-2 bg-studio-900 rounded-xl border border-slate-700 hover:border-cyan-400 text-cyan-300 font-bold">E2 (สาย 6)</button>
-      <button onclick="playNoteFrequency(110.00, 'A2 (สาย 5)')" class="p-2 bg-studio-900 rounded-xl border border-slate-700 hover:border-cyan-400 text-cyan-300 font-bold">A2 (สาย 5)</button>
-      <button onclick="playNoteFrequency(146.83, 'D3 (สาย 4)')" class="p-2 bg-studio-900 rounded-xl border border-slate-700 hover:border-cyan-400 text-cyan-300 font-bold">D3 (สาย 4)</button>
-      <button onclick="playNoteFrequency(196.00, 'G3 (สาย 3)')" class="p-2 bg-studio-900 rounded-xl border border-slate-700 hover:border-cyan-400 text-cyan-300 font-bold">G3 (สาย 3)</button>
-      <button onclick="playNoteFrequency(246.94, 'B3 (สาย 2)')" class="p-2 bg-studio-900 rounded-xl border border-slate-700 hover:border-cyan-400 text-cyan-300 font-bold">B3 (สาย 2)</button>
-      <button onclick="playNoteFrequency(329.63, 'E4 (สาย 1)')" class="p-2 bg-studio-900 rounded-xl border border-slate-700 hover:border-cyan-400 text-cyan-300 font-bold">E4 (สาย 1)</button>
+      <button onclick="playNoteFrequency(82.41, 'E2 (สาย 6)')" class="p-2 bg-sky-50 rounded-xl border border-sky-200 hover:bg-sky-100 text-sky-800 font-bold">E2 (สาย 6)</button>
+      <button onclick="playNoteFrequency(110.00, 'A2 (สาย 5)')" class="p-2 bg-sky-50 rounded-xl border border-sky-200 hover:bg-sky-100 text-sky-800 font-bold">A2 (สาย 5)</button>
+      <button onclick="playNoteFrequency(146.83, 'D3 (สาย 4)')" class="p-2 bg-sky-50 rounded-xl border border-sky-200 hover:bg-sky-100 text-sky-800 font-bold">D3 (สาย 4)</button>
+      <button onclick="playNoteFrequency(196.00, 'G3 (สาย 3)')" class="p-2 bg-sky-50 rounded-xl border border-sky-200 hover:bg-sky-100 text-sky-800 font-bold">G3 (สาย 3)</button>
+      <button onclick="playNoteFrequency(246.94, 'B3 (สาย 2)')" class="p-2 bg-sky-50 rounded-xl border border-sky-200 hover:bg-sky-100 text-sky-800 font-bold">B3 (สาย 2)</button>
+      <button onclick="playNoteFrequency(329.63, 'E4 (สาย 1)')" class="p-2 bg-sky-50 rounded-xl border border-sky-200 hover:bg-sky-100 text-sky-800 font-bold">E4 (สาย 1)</button>
     </div>
 
     <div class="pt-2">
-      <button onclick="stopAllTunerTones()" class="w-full py-2 bg-rose-600/30 hover:bg-rose-600/50 text-rose-300 text-xs font-bold rounded-xl border border-rose-500/40">
+      <button onclick="stopAllTunerTones()" class="w-full py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold rounded-xl border border-rose-200">
         หยุดเสียง
       </button>
     </div>
@@ -1151,7 +1145,6 @@ async function initStudioMedia() {
     startMessagePolling();
   } catch (err) {
     console.warn("Could not start audio automatically:", err);
-    // User can click to activate audio permissions
     showToast("กรุณากดเปิดสิทธิ์ไมโครโฟน/อุปกรณ์เสียง เพื่อเล่นสดร่วมกัน", "warning");
     startPresenceHeartbeat();
     startSignalPolling();
@@ -1207,7 +1200,7 @@ async function toggleAudioMode() {
   } else {
     if (icon) icon.textContent = '🎙️';
     if (text) text.textContent = 'ไมค์พูดคุย (Voice)';
-    if (badge) { badge.textContent = 'VOICE CHAT'; badge.className = 'text-[10px] text-cyan-400 font-mono font-bold'; }
+    if (badge) { badge.textContent = 'VOICE CHAT'; badge.className = 'text-[10px] text-sky-400 font-mono font-bold'; }
     if (toolModeText) toolModeText.textContent = 'ไมค์พูดคุย (ตัดเสียงรบกวน)';
     showToast("เปิดโหมดไมค์พูดคุย (เปิดตัวตัดเสียงก้อง)", "ok");
   }
@@ -1261,13 +1254,13 @@ function toggleAudioTrack() {
   if (isAudioEnabled) {
     if (micBtnText) micBtnText.textContent = 'ส่งเสียงสด (ON)';
     if (micBtnIcon) micBtnIcon.textContent = '🎙️';
-    if (myMicStatus) { myMicStatus.textContent = '🎙️ ส่งเสียง'; myMicStatus.className = 'p-1 rounded bg-emerald-950 text-emerald-300 text-[10px] font-bold'; }
-    document.getElementById('toggleMicBtn')?.classList.replace('bg-slate-800', 'bg-emerald-600');
+    if (myMicStatus) { myMicStatus.textContent = '🎙️ ส่งเสียง'; myMicStatus.className = 'p-1 rounded bg-emerald-100 text-emerald-700 text-[10px] font-bold'; }
+    document.getElementById('toggleMicBtn')?.classList.replace('bg-slate-700', 'bg-emerald-600');
   } else {
     if (micBtnText) micBtnText.textContent = 'ปิดเสียง (Muted)';
     if (micBtnIcon) micBtnIcon.textContent = '🔇';
-    if (myMicStatus) { myMicStatus.textContent = '🔇 ปิดเสียง'; myMicStatus.className = 'p-1 rounded bg-rose-950 text-rose-300 text-[10px] font-bold'; }
-    document.getElementById('toggleMicBtn')?.classList.replace('bg-emerald-600', 'bg-slate-800');
+    if (myMicStatus) { myMicStatus.textContent = '🔇 ปิดเสียง'; myMicStatus.className = 'p-1 rounded bg-rose-100 text-rose-700 text-[10px] font-bold'; }
+    document.getElementById('toggleMicBtn')?.classList.replace('bg-emerald-600', 'bg-slate-700');
   }
 }
 
@@ -1291,7 +1284,7 @@ async function toggleVideoTrack() {
         localVideo.classList.remove('hidden');
       }
       if (localAvatarBox) localAvatarBox.classList.add('hidden');
-      if (myCamStatus) { myCamStatus.textContent = '📷 เปิดกล้อง'; myCamStatus.className = 'p-1 rounded bg-purple-950 text-purple-300 text-[10px] font-bold'; }
+      if (myCamStatus) { myCamStatus.textContent = '📷 เปิดกล้อง'; myCamStatus.className = 'p-1 rounded bg-sky-100 text-sky-700 text-[10px] font-bold'; }
       if (camBtnText) camBtnText.textContent = 'ปิดกล้อง';
 
       // Add video track to existing peers
@@ -1316,7 +1309,7 @@ async function toggleVideoTrack() {
       localVideo.srcObject = null;
     }
     if (localAvatarBox) localAvatarBox.classList.remove('hidden');
-    if (myCamStatus) { myCamStatus.textContent = '📷 ปิด'; myCamStatus.className = 'p-1 rounded bg-slate-800 text-slate-400 text-[10px]'; }
+    if (myCamStatus) { myCamStatus.textContent = '📷 ปิด'; myCamStatus.className = 'p-1 rounded bg-slate-100 text-slate-500 text-[10px]'; }
     if (camBtnText) camBtnText.textContent = 'เปิดกล้อง';
   }
 }
@@ -1327,7 +1320,6 @@ async function toggleScreenShare() {
     isScreenSharing = false;
     document.getElementById('shareScreenText').textContent = 'แชร์โน้ต/จอ';
     if (videoTrack) {
-      // Revert to camera if was active
       toggleVideoTrack();
     }
     return;
@@ -1377,21 +1369,18 @@ function getOrCreatePeerConnection(peerName) {
   const pc = new RTCPeerConnection(rtcConfig);
   peerConnections[peerName] = pc;
 
-  // Add local tracks to peer connection
   if (localStream) {
     localStream.getTracks().forEach(track => {
       pc.addTrack(track, localStream);
     });
   }
 
-  // Handle ICE Candidates
   pc.onicecandidate = (event) => {
     if (event.candidate) {
       sendSignal(peerName, 'ice', JSON.stringify(event.candidate));
     }
   };
 
-  // Handle incoming remote tracks
   pc.ontrack = (event) => {
     handleRemoteTrack(peerName, event.streams[0] || new MediaStream([event.track]));
   };
@@ -1440,36 +1429,36 @@ function renderPeerTile(peerName, stream) {
   if (!tile) {
     tile = document.createElement('div');
     tile.id = tileId;
-    tile.className = 'glass-card rounded-2xl p-3 border border-slate-800 relative flex flex-col justify-between overflow-hidden shadow-xl';
+    tile.className = 'glass-card rounded-2xl p-3 border border-sky-100 relative flex flex-col justify-between overflow-hidden shadow-md';
     tile.innerHTML = `
-      <div class="relative w-full flex-1 min-h-[160px] bg-studio-900 rounded-xl overflow-hidden flex items-center justify-center">
+      <div class="relative w-full flex-1 min-h-[160px] bg-gradient-to-br from-sky-900 to-slate-900 rounded-xl overflow-hidden flex items-center justify-center">
         <video id="video_${tileId}" autoplay playsinline class="w-full h-full object-cover hidden"></video>
         <audio id="audio_${tileId}" autoplay></audio>
         
         <div id="avatar_${tileId}" class="flex flex-col items-center justify-center p-4 text-center">
-          <div class="h-20 w-20 rounded-2xl bg-studio-950 border border-slate-700 flex items-center justify-center text-3xl mb-2 shadow-inner">
+          <div class="h-20 w-20 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-3xl mb-2 shadow-inner">
             🎸
           </div>
           <div class="text-sm font-bold text-white">${peerName}</div>
-          <div class="text-xs text-cyan-300 font-semibold" id="role_${tileId}">Band Musician</div>
+          <div class="text-xs text-sky-200 font-semibold" id="role_${tileId}">Band Musician</div>
         </div>
 
         <!-- VU Meter Bar for peer -->
-        <div class="absolute bottom-2 left-2 right-2 flex items-center justify-between bg-black/60 backdrop-blur-md px-2.5 py-1.5 rounded-lg border border-white/10 text-xs">
+        <div class="absolute bottom-2 left-2 right-2 flex items-center justify-between bg-black/60 backdrop-blur-md px-2.5 py-1.5 rounded-lg border border-white/15 text-xs text-white">
           <div class="flex items-center gap-1.5">
             <span>🔊</span>
             <div class="w-20 sm:w-28 bg-slate-800 h-2 rounded-full overflow-hidden">
-              <div id="vu_${tileId}" class="bg-gradient-to-r from-emerald-400 via-cyan-400 to-purple-500 h-full w-0 vu-bar"></div>
+              <div id="vu_${tileId}" class="bg-gradient-to-r from-emerald-400 via-sky-400 to-blue-500 h-full w-0 vu-bar"></div>
             </div>
           </div>
-          <span class="text-[10px] text-cyan-400 font-mono font-bold">STEREO</span>
+          <span class="text-[10px] text-sky-300 font-mono font-bold">STEREO</span>
         </div>
       </div>
 
-      <div class="mt-2 flex items-center justify-between text-xs pt-1 border-t border-slate-800">
-        <div class="font-bold text-white truncate">${peerName}</div>
+      <div class="mt-2 flex items-center justify-between text-xs pt-1 border-t border-slate-100">
+        <div class="font-bold text-slate-800 truncate">${peerName}</div>
         <div class="flex items-center gap-2">
-          <input type="range" min="0" max="1.5" step="0.1" value="1" title="Volume สำหรับผู้เล่นนี้" oninput="setPeerVolume('${tileId}', this.value)" class="w-16 accent-cyan-400">
+          <input type="range" min="0" max="1.5" step="0.1" value="1" title="Volume สำหรับผู้เล่นนี้" oninput="setPeerVolume('${tileId}', this.value)" class="w-16 accent-sky-600">
         </div>
       </div>
     `;
@@ -1602,17 +1591,17 @@ function updateMembersList(members) {
 
   if (listEl) {
     listEl.innerHTML = members.map(m => `
-      <div class="glass-card p-2.5 rounded-xl border border-slate-800 flex items-center justify-between">
+      <div class="glass-card p-2.5 rounded-xl border border-sky-100 flex items-center justify-between shadow-sm">
         <div class="flex items-center gap-2">
           <span class="text-base">${(m.role || '🎸').split(' ')[0]}</span>
           <div>
-            <div class="font-bold text-white text-xs">${m.name} ${m.name === MY_NAME ? '(คุณ)' : ''}</div>
-            <div class="text-[10px] text-purple-400">${m.role || 'Musician'}</div>
+            <div class="font-bold text-slate-800 text-xs">${m.name} ${m.name === MY_NAME ? '(คุณ)' : ''}</div>
+            <div class="text-[10px] text-sky-600">${m.role || 'Musician'}</div>
           </div>
         </div>
         <div class="flex items-center gap-1.5 text-[10px]">
-          <span class="px-1.5 py-0.5 rounded ${m.has_audio ? 'bg-emerald-950 text-emerald-300' : 'bg-slate-800 text-slate-500'}">🎙️</span>
-          <span class="px-1.5 py-0.5 rounded ${m.has_video ? 'bg-purple-950 text-purple-300' : 'bg-slate-800 text-slate-500'}">📷</span>
+          <span class="px-1.5 py-0.5 rounded ${m.has_audio ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'}">🎙️</span>
+          <span class="px-1.5 py-0.5 rounded ${m.has_video ? 'bg-sky-100 text-sky-700' : 'bg-slate-100 text-slate-400'}">📷</span>
         </div>
       </div>
     `).join('');
@@ -1621,7 +1610,6 @@ function updateMembersList(members) {
   // Connect to peers who are online
   members.forEach(m => {
     if (m.name !== MY_NAME && !peerConnections[m.name]) {
-      // Connect to peer (Host/Alphabetical rule to prevent duplicate offers)
       if (MY_NAME > m.name) {
         createOfferForPeer(m.name);
       }
@@ -1664,26 +1652,26 @@ function appendChatMessage(msg, container) {
   msgDiv.className = isSystem ? 'text-center my-2' : (isMe ? 'flex flex-col items-end my-1.5' : 'flex flex-col items-start my-1.5');
 
   if (isSystem) {
-    msgDiv.innerHTML = `<span class="px-2.5 py-1 rounded-full bg-studio-900 border border-slate-800 text-[10px] text-slate-400 font-mono">${msg.body}</span>`;
+    msgDiv.innerHTML = `<span class="px-2.5 py-1 rounded-full bg-sky-50 border border-sky-100 text-[10px] text-sky-700 font-mono">${msg.body}</span>`;
   } else {
     let contentHtml = escapeHtml(msg.body);
     // Highlight chord annotations e.g. [C], [Am], [G7]
-    contentHtml = contentHtml.replace(/\[([A-G][b#]?[m]?[0-9]?[a-zA-Z]*)\]/g, '<span class="px-1 py-0.5 rounded bg-purple-900/60 text-cyan-300 font-mono font-bold text-xs">$1</span>');
+    contentHtml = contentHtml.replace(/\[([A-G][b#]?[m]?[0-9]?[a-zA-Z]*)\]/g, '<span class="px-1.5 py-0.5 rounded bg-sky-100 text-sky-800 font-mono font-bold text-xs border border-sky-200">$1</span>');
 
     let fileHtml = '';
     if (msg.file_data) {
       if (msg.msg_type === 'image') {
-        fileHtml = `<img src="${msg.file_data}" class="rounded-xl max-h-48 mt-1 border border-white/10 cursor-pointer" onclick="window.open(this.src)">`;
+        fileHtml = `<img src="${msg.file_data}" class="rounded-xl max-h-48 mt-1 border border-slate-200 cursor-pointer shadow-sm" onclick="window.open(this.src)">`;
       } else if (msg.msg_type === 'audio') {
         fileHtml = `<audio src="${msg.file_data}" controls class="w-full mt-1.5"></audio>`;
       } else {
-        fileHtml = `<a href="${msg.file_data}" download="attachment" class="inline-flex items-center gap-1.5 mt-1 px-3 py-1.5 rounded-lg bg-studio-950 border border-slate-700 text-cyan-300 font-bold text-xs hover:underline">📥 ดาวน์โหลดไฟล์แนบ</a>`;
+        fileHtml = `<a href="${msg.file_data}" download="attachment" class="inline-flex items-center gap-1.5 mt-1 px-3 py-1.5 rounded-lg bg-white border border-sky-200 text-sky-700 font-bold text-xs hover:underline shadow-sm">📥 ดาวน์โหลดไฟล์แนบ</a>`;
       }
     }
 
     msgDiv.innerHTML = `
-      <div class="text-[10px] text-slate-400 mb-0.5 px-1">${msg.author} <span class="text-purple-400">(${msg.role || '🎸'})</span></div>
-      <div class="px-3 py-2 rounded-2xl max-w-[85%] break-words ${isMe ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-br-none' : 'bg-studio-900 border border-slate-800 text-slate-200 rounded-bl-none'}">
+      <div class="text-[10px] text-slate-500 mb-0.5 px-1">${msg.author} <span class="text-sky-600 font-semibold">(${msg.role || '🎸'})</span></div>
+      <div class="px-3.5 py-2.5 rounded-2xl max-w-[85%] break-words shadow-sm ${isMe ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-br-none' : 'bg-white border border-slate-200 text-slate-800 rounded-bl-none'}">
         <div>${contentHtml}</div>
         ${fileHtml}
       </div>
@@ -1749,13 +1737,13 @@ function toggleMetronome() {
   const mDot = document.getElementById('mMetroIndicator');
 
   if (metronomePlaying) {
-    if (btn) btn.classList.add('bg-purple-600', 'text-white');
+    if (btn) btn.classList.add('bg-sky-600', 'text-white');
     startMetronomeLoop();
   } else {
-    if (btn) btn.classList.remove('bg-purple-600', 'text-white');
+    if (btn) btn.classList.remove('bg-sky-600', 'text-white');
     if (metronomeInterval) clearInterval(metronomeInterval);
-    if (dot) dot.className = 'h-3 w-3 rounded-full bg-slate-700';
-    if (mDot) mDot.className = 'h-2.5 w-2.5 rounded-full bg-slate-700';
+    if (dot) dot.className = 'h-3 w-3 rounded-full bg-slate-300';
+    if (mDot) mDot.className = 'h-2.5 w-2.5 rounded-full bg-slate-300';
   }
 }
 
@@ -1770,8 +1758,8 @@ function startMetronomeLoop() {
 
     const dot = document.getElementById('metroIndicator');
     const mDot = document.getElementById('mMetroIndicator');
-    if (dot) dot.className = `h-3 w-3 rounded-full ${beat === 1 ? 'bg-cyan-400 shadow-lg shadow-cyan-400/80 scale-125' : 'bg-purple-500 scale-100'} transition duration-75`;
-    if (mDot) mDot.className = `h-2.5 w-2.5 rounded-full ${beat === 1 ? 'bg-cyan-400' : 'bg-purple-500'}`;
+    if (dot) dot.className = `h-3 w-3 rounded-full ${beat === 1 ? 'bg-sky-500 shadow-md shadow-sky-500/80 scale-125' : 'bg-blue-400 scale-100'} transition duration-75`;
+    if (mDot) mDot.className = `h-2.5 w-2.5 rounded-full ${beat === 1 ? 'bg-sky-500' : 'bg-blue-400'}`;
   }, intervalMs);
 }
 
@@ -1859,7 +1847,7 @@ async function toggleRecording() {
     // Stop recording
     mediaRecorder.stop();
     clearInterval(recordTimerInterval);
-    document.getElementById('recordBtn').classList.remove('bg-rose-600', 'text-white');
+    document.getElementById('recordBtn').classList.remove('bg-rose-500', 'text-white');
     document.getElementById('recDot').classList.remove('rec-blink');
     document.getElementById('recText').textContent = 'บันทึกวิดีโอ & เสียง';
     document.getElementById('recTimer').classList.add('hidden');
@@ -1922,7 +1910,7 @@ async function toggleRecording() {
     mediaRecorder.start(1000);
     recordStartTime = Date.now();
 
-    document.getElementById('recordBtn').classList.add('bg-rose-600', 'text-white');
+    document.getElementById('recordBtn').classList.add('bg-rose-500', 'text-white');
     document.getElementById('recDot').classList.add('rec-blink');
     document.getElementById('recText').textContent = 'กำลังบันทึก (REC)';
     document.getElementById('recTimer').classList.remove('hidden');
@@ -1950,9 +1938,9 @@ function switchSidebarTab(tab) {
   document.getElementById('tabMembers').classList.toggle('hidden', tab !== 'members');
   document.getElementById('tabTools').classList.toggle('hidden', tab !== 'tools');
 
-  document.getElementById('tabChatBtn').className = `flex-1 py-1.5 rounded-lg text-xs font-bold transition ${tab === 'chat' ? 'bg-purple-600 text-white' : 'text-slate-400 hover:text-white'}`;
-  document.getElementById('tabMembersBtn').className = `flex-1 py-1.5 rounded-lg text-xs font-bold transition ${tab === 'members' ? 'bg-purple-600 text-white' : 'text-slate-400 hover:text-white'}`;
-  document.getElementById('tabToolsBtn').className = `flex-1 py-1.5 rounded-lg text-xs font-bold transition ${tab === 'tools' ? 'bg-purple-600 text-white' : 'text-slate-400 hover:text-white'}`;
+  document.getElementById('tabChatBtn').className = `flex-1 py-1.5 rounded-lg text-xs font-bold transition ${tab === 'chat' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-600 hover:text-sky-700'}`;
+  document.getElementById('tabMembersBtn').className = `flex-1 py-1.5 rounded-lg text-xs font-bold transition ${tab === 'members' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-600 hover:text-sky-700'}`;
+  document.getElementById('tabToolsBtn').className = `flex-1 py-1.5 rounded-lg text-xs font-bold transition ${tab === 'tools' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-600 hover:text-sky-700'}`;
 }
 
 function toggleMobileChatSheet() {
@@ -1984,7 +1972,7 @@ function escapeHtml(str) {
 
 function showToast(msg, type='ok') {
   const toast = document.createElement('div');
-  toast.className = `fixed bottom-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-2xl text-xs font-bold shadow-2xl backdrop-blur-xl border ${type === 'error' ? 'bg-rose-600 text-white border-rose-400' : 'bg-purple-600 text-white border-purple-400 shadow-purple-500/30'}`;
+  toast.className = `fixed bottom-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-2xl text-xs font-bold shadow-xl backdrop-blur-xl border ${type === 'error' ? 'bg-rose-500 text-white border-rose-400 shadow-rose-500/30' : 'bg-sky-600 text-white border-sky-400 shadow-sky-500/30'}`;
   toast.textContent = msg;
   document.body.appendChild(toast);
   setTimeout(() => toast.remove(), 3500);
@@ -2354,7 +2342,7 @@ init_db()
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     print("\n" + "="*60)
-    print(" 🎸 Music Room — Live Jam Studio กำลังทำงานบนเซิร์ฟเวอร์...")
+    print(" 🎸 Music Room — Live Jam Studio (Bright Sky Blue) กำลังทำงานบนเซิร์ฟเวอร์...")
     print(f" 🌐 สำหรับเครื่องนี้: http://127.0.0.1:{port}")
     ips = get_local_ips()
     for item in ips:
